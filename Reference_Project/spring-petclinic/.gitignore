@@ -1,17 +1,3 @@
-*.env
-**/.terraform/
-**/.packer/
-*.tfstate
-*.tfstate.*
-crash.log
-.terraform.lock.hcl
-manifest.json.lock
-*.pem
-# terraform.tfvars
-# terraform.tfvars.json
-
-
-# For Petclinic APP
 HELP.md
 pom.xml.bak
 target/
