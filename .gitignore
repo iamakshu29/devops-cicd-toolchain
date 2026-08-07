@@ -1,1 +1,10 @@
 *.env
+**/.terraform/
+**/.packer/
+*.tfstate
+*.tfstate.*
+crash.log
+.terraform.lock.hcl
+*.pem
+# terraform.tfvars
+# terraform.tfvars.json
