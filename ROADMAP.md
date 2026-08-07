@@ -93,10 +93,11 @@ Tools that are just CLIs (installed on Jenkins agent):
 ## File Reading Order
 
 ```
-1. Pipeline-Architecture-Reference.md   → Read once to understand the full picture
-2. 01_SonarQube/tasks.md                → Set up SonarQube, run the stage, verify it works
-3. 02 → 09 (one at a time)              → Add each tool's stage, verify before moving on
-4. 10_Full_Pipeline_Project/tasks.md    → Only after all tools work individually
+1. 00_Setup/00-Setup.md                          → Read first. Provision your environment before anything else.
+2. Pipeline-Architecture-Reference.md   → Read once to understand the full picture.
+3. 01_SonarQube/tasks.md                → Set up SonarQube, run the stage, verify it works.
+4. 02 → 09 (one at a time)              → Add each tool's stage, verify before moving on.
+5. 10_Full_Pipeline_Project/tasks.md    → Only after all tools work individually.
 ```
 
 ---
