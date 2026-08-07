@@ -1,6 +1,17 @@
-# CI/CD Pipeline — Architecture Reference
+# DevOps CI/CD Toolchain
 
 > Read this once before starting any tool. Understand the full picture, then work through tools one by one.
+
+> A hands-on journey to understand how modern DevOps and DevSecOps tools work **together inside a CI/CD pipeline**.
+> We start with the software delivery lifecycle and progressively build a production-style pipeline. Each tool is introduced when the pipeline has a problem or requirement that the tool can solve.
+
+
+## For every technology, we answer five questions:
+1. **What problem does it solve?**
+2. **Why does the CI/CD pipeline need it?**
+3. **How does it work internally and interact with other components?**
+4. **How do we integrate it into the pipeline?**
+5. **What happens when it succeeds, fails, or becomes unavailable?**
 
 ---
 
