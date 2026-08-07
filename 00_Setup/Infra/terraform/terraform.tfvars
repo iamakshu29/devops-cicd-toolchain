@@ -31,6 +31,18 @@ security_group = {
         from_port   = 8080
         ip_protocol = "tcp"
         to_port     = 8080
+      },
+      {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 9000
+        ip_protocol = "tcp"
+        to_port     = 9000
+      },
+      {
+        cidr_ipv4   = "0.0.0.0/0"
+        from_port   = 8081
+        ip_protocol = "tcp"
+        to_port     = 8082  # covers both Nexus UI (8081) and Nexus Docker repo (8082)
       }
     ]
 

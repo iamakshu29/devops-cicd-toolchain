@@ -16,7 +16,7 @@ resource "aws_instance" "jenkins" {
   instance_type          = each.value.instance_type
   key_name               = each.key == "jenkins_master" ? aws_key_pair.jenkins_key["jenkins_master"].key_name : aws_key_pair.jenkins_slave.key_name
   subnet_id              = data.aws_subnet.default[each.value.availability_zone].id
-  vpc_security_group_ids = [aws_security_group.ansible_sg[each.key].id]
+  vpc_security_group_ids = [aws_security_group.jenkins_sg[each.key].id]
   iam_instance_profile   = each.key == "jenkins_master" ? aws_iam_instance_profile.jenkins_master.name : null
 
   user_data = each.key == "jenkins_master" ? file("${path.module}/user_data.sh") : null

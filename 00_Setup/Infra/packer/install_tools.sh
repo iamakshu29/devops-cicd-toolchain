@@ -18,6 +18,14 @@ install_base_packages() {
     echo "====================================================================="
     echo "Updating apt package"
     sudo apt update -y
+    # wget and curl are required by install_trivy and install_cosign
+    sudo apt install -y wget curl
+
+    # SonarQube + Elasticsearch requirement — persisted in AMI so all instances inherit it
+    echo "vm.max_map_count=524288" | sudo tee -a /etc/sysctl.conf
+    echo "fs.file-max=131072" | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -w vm.max_map_count=524288
+    sudo sysctl -w fs.file-max=131072
 }
 
 
@@ -140,7 +148,12 @@ install_jenkins(){
 
         echo "---------------------------------------------------------------"
         echo "Starting the Jenkins Container"
-        docker run -d --name jenkins --restart unless-stopped -p 8080:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home jenkins/jenkins:lts-jdk21
+        # Docker socket mount required — pipeline stages run docker build/push on the host daemon
+        docker run -d --name jenkins --restart unless-stopped \
+            -p 8080:8080 -p 50000:50000 \
+            -v jenkins_home:/var/jenkins_home \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            jenkins/jenkins:lts-jdk21
     fi
 }
 
@@ -153,8 +166,12 @@ install_trivy(){
     else
         echo "---------------------------------------------------------------"
         echo "Installing Trivy"
-        wget https://github.com/aquasecurity/trivy/releases/download/v0.73.0/trivy_0.73.0_Linux-64bit.deb
-        sudo dpkg -i trivy_0.73.0_Linux-64bit.deb   
+        TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest \
+            | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+        wget "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb" \
+            -O /tmp/trivy.deb
+        sudo dpkg -i /tmp/trivy.deb
+        rm /tmp/trivy.deb
     fi
 }
 
@@ -178,6 +195,22 @@ install_checkov() {
 install_cosign() {
     echo "====================================================================="
     echo "Checking for Cosign"
+    if command -v cosign >/dev/null 2>&1; then
+        echo "Cosign is Present"
+    else
+        echo "---------------------------------------------------------------"
+        echo "Installing Cosign"
+        COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest \
+            | grep tag_name | cut -d '"' -f 4)
+        curl -Lo /tmp/cosign \
+            "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+        chmod +x /tmp/cosign
+        sudo mv /tmp/cosign /usr/local/bin/cosign
+    fi
+
+    echo "---------------------------------------------------------------"
+    echo "Cosign version"
+    cosign version
 }
 
 verify_installations() {
@@ -204,6 +237,10 @@ verify_installations() {
     echo "---------------------------------------------------------------"
     echo "Checkov version"
     checkov --version
+
+    echo "---------------------------------------------------------------"
+    echo "Cosign version"
+    cosign version
 }
 
 
@@ -216,5 +253,3 @@ install_trivy
 install_checkov
 install_cosign
 verify_installations
-
-echo "Get urls for jenkins, nexus, sonarqube and if there any other required"

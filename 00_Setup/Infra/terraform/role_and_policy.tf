@@ -27,7 +27,7 @@ resource "aws_iam_role" "jenkins_master" {
 
 resource "aws_iam_policy" "jenkins_master" {
   name        = "JenkinsMasterPolicy"
-  description = "EC2 dynamic inventory read + SSM parameter retrieval for the controller node"
+  description = "SSM parameter retrieval for Jenkins slave key"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -53,7 +53,7 @@ resource "aws_iam_policy" "jenkins_master" {
           "ssm:GetParameters"
         ]
 
-        Resource = "arn:aws:ssm:*:*:parameter/ansible/*"
+        Resource = "arn:aws:ssm:*:*:parameter/jenkins/*"
       }
     ]
   })
