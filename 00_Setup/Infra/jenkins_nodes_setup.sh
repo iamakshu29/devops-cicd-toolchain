@@ -24,12 +24,14 @@ if [[ -z "$ACTION" ]]; then
     read -rp "What do you want to do? (apply/destroy): " ACTION
 fi
 
+echo "=========================================================================================================================================="
 echo "Checking for AWS"
 if ! command -v aws >/dev/null 2>&1; then
     echo "AWS CLI not found."
     exit 1
 fi
 
+echo "=========================================================================================================================================="
 echo "Checking for Packer"
 if command -v packer >/dev/null 2>&1; then
     echo "Packer already present"
@@ -40,6 +42,7 @@ else
     exit 1
 fi
 
+echo "=========================================================================================================================================="
 echo "Checking for Terraform"
 if command -v terraform >/dev/null 2>&1; then
     echo "Terraform already present"
@@ -50,9 +53,11 @@ else
     exit 1
 fi
 
+echo "=========================================================================================================================================="
 echo "Initializing Packer..."
 packer init ./packer
 
+echo "=========================================================================================================================================="
 echo "Initializing Terraform..."
 terraform -chdir=./terraform init
 

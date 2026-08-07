@@ -15,11 +15,11 @@
 set -euo pipefail
 
 install_base_packages() {
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Updating apt package"
     sudo apt update -y
     # wget and curl are required by install_trivy and install_cosign
-    sudo apt install -y wget curl
+    sudo apt install -y wget curl unzip
 
     # SonarQube + Elasticsearch requirement — persisted in AMI so all instances inherit it
     echo "vm.max_map_count=524288" | sudo tee -a /etc/sysctl.conf
@@ -30,30 +30,32 @@ install_base_packages() {
 
 
 install_git() {
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for Git"
     if command -v git >/dev/null 2>&1; then
         echo "Git Already Present"
     else
         echo "Git not present, Installing Git"
-        sudo apt install -y git 
+        sudo apt install -y git
     fi
 }
 
 
 install_aws_cli() {
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for AWS CLI"
     if command -v aws >/dev/null 2>&1; then
         echo "AWS CLI Already Present"
     else
         echo "AWS CLI not present, Installing AWS CLI"
-        sudo apt install -y awscli
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install
     fi
 }
 
 install_docker_and_docker_compose() {
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for Docker"
 
     if command -v docker >/dev/null 2>&1; then
@@ -69,7 +71,7 @@ install_docker_and_docker_compose() {
             docker-buildx \
             podman-docker \
             containerd \
-            runc 2>/dev/null | awk '{print $1}')
+            runc 2>/dev/null | awk '{print $1}' || true)
 
         if [ -n "$conflicting_packages" ]; then
             sudo apt remove -y $conflicting_packages
@@ -111,45 +113,45 @@ EOF
         sudo usermod -aG docker "$USER"
     fi
 
-    echo "---------------------------------------------------------------"
+    echo "------------------------------------------------------------------------------------------------------------------------------"
     echo "Docker version"
     sudo docker version
 
-    echo "---------------------------------------------------------------"
+    echo "------------------------------------------------------------------------------------------------------------------------------"
     echo "Docker Compose version"
     sudo docker compose version
 }
 
 
 install_jenkins(){
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for Jenkins"
-    if docker container inspect jenkins >/dev/null 2>&1; then
-        echo "---------------------------------------------------------------"
+    if sudo docker container inspect jenkins >/dev/null 2>&1; then
+        echo "------------------------------------------------------------------------------------------------------------------------------"
         echo "Jenkins Already Present"
         echo "Check if Jenkins is running"
 
-        if docker container inspect -f '{{.State.Running}}' jenkins 2>/dev/null | grep -q true; then
-            echo "---------------------------------------------------------------"
+        if sudo docker container inspect -f '{{.State.Running}}' jenkins 2>/dev/null | grep -q true; then
+            echo "---------------------------------------------------------------------------------------------------------------------------"
             echo "Jenkins is Running"
         else
             echo "Jenkins exists but is not running"
-            docker start jenkins
+            sudo docker start jenkins
         fi
 
     else
 
         echo "Image not present, Building One"
-        docker pull jenkins/jenkins:lts-jdk21
+        sudo docker pull jenkins/jenkins:lts-jdk21
 
-        echo "---------------------------------------------------------------"
+        echo "--------------------------------------------------------------------------------------------------------------------------------"
         echo "Creating Volume to persist data"
-        docker volume create jenkins_home
+        sudo docker volume create jenkins_home
 
-        echo "---------------------------------------------------------------"
+        echo "--------------------------------------------------------------------------------------------------------------------------------"
         echo "Starting the Jenkins Container"
         # Docker socket mount required — pipeline stages run docker build/push on the host daemon
-        docker run -d --name jenkins --restart unless-stopped \
+        sudo docker run -d --name jenkins --restart unless-stopped \
             -p 8080:8080 -p 50000:50000 \
             -v jenkins_home:/var/jenkins_home \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -159,12 +161,12 @@ install_jenkins(){
 
 
 install_trivy(){
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for Trivy"
     if trivy --version >/dev/null 2>&1; then
         echo "Trivy is Present"
     else
-        echo "---------------------------------------------------------------"
+        echo "---------------------------------------------------------------------------------------------------------------------------------"
         echo "Installing Trivy"
         TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest \
             | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
@@ -177,12 +179,12 @@ install_trivy(){
 
 
 install_checkov() {
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for Checkov"
     if command -v checkov >/dev/null 2>&1; then
         echo "Checkov is Present"
     else
-        echo "---------------------------------------------------------------"
+        echo "---------------------------------------------------------------------------------------------------------------------------------"
         echo "Installing Checkov"
         sudo apt install -y python3 python3-venv
         sudo python3 -m venv /opt/checkov
@@ -193,12 +195,12 @@ install_checkov() {
 }
 
 install_cosign() {
-    echo "====================================================================="
+    echo "=========================================================================================================================================="
     echo "Checking for Cosign"
     if command -v cosign >/dev/null 2>&1; then
         echo "Cosign is Present"
     else
-        echo "---------------------------------------------------------------"
+        echo "---------------------------------------------------------------------------------------------------------------------------------"
         echo "Installing Cosign"
         COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest \
             | grep tag_name | cut -d '"' -f 4)
@@ -208,37 +210,37 @@ install_cosign() {
         sudo mv /tmp/cosign /usr/local/bin/cosign
     fi
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Cosign version"
     cosign version
 }
 
 verify_installations() {
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Git version"
     git --version
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "AWS CLI version"
     aws --version
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Docker version"
     sudo docker version
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Docker Compose version"
     docker compose version
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Trivy version"
     trivy --version
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Checkov version"
     checkov --version
 
-    echo "---------------------------------------------------------------"
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "Cosign version"
     cosign version
 }

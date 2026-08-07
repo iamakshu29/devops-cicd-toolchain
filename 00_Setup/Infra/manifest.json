@@ -3,21 +3,12 @@
     {
       "name": "ubuntu",
       "builder_type": "amazon-ebs",
-      "build_time": 1783676630,
+      "build_time": 1786132617,
       "files": null,
-      "artifact_id": "us-east-1:ami-067e8bd7cfe8cfe68",
-      "packer_run_uuid": "cad53d28-d7b7-8a68-2f60-3cb845f9ca1e",
-      "custom_data": null
-    },
-    {
-      "name": "ubuntu",
-      "builder_type": "amazon-ebs",
-      "build_time": 1783712167,
-      "files": null,
-      "artifact_id": "us-east-1:ami-06d4560ed352fe612",
-      "packer_run_uuid": "fc9c2f59-34bc-d889-98b3-9f811d16eb08",
+      "artifact_id": "us-east-1:ami-0a19948eb95f6ec8c",
+      "packer_run_uuid": "7f4a2cfe-2131-deac-f60b-d723879b2fd3",
       "custom_data": null
     }
   ],
-  "last_run_uuid": "fc9c2f59-34bc-d889-98b3-9f811d16eb08"
+  "last_run_uuid": "7f4a2cfe-2131-deac-f60b-d723879b2fd3"
 }

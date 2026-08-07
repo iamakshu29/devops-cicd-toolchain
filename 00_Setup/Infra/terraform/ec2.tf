@@ -5,8 +5,8 @@ resource "aws_key_pair" "jenkins_key" {
 }
 
 resource "aws_key_pair" "jenkins_slave" {
-  key_name   = "jenkins_master"
-  public_key = tls_private_key.jenkins_master.public_key_openssh
+  key_name   = "jenkins_slave"
+  public_key = tls_private_key.jenkins_slave.public_key_openssh
 }
 
 resource "aws_instance" "jenkins" {
@@ -36,5 +36,5 @@ resource "aws_instance" "jenkins" {
     Environment = "lab"
   }
 
-  depends_on = [aws_ssm_parameter.store_jenkins_master_key]
+  depends_on = [aws_ssm_parameter.store_jenkins_slave_key]
 }
