@@ -53,6 +53,11 @@ Jenkins reads exit code → pass or fail the stage
 
 No server. No Docker Compose. Just install the binary on the machine where Jenkins agent runs.
 
+### Install on Windows using choco (Run as admin)
+```powershell
+choco install trivy -y
+```
+
 ### Install on Ubuntu/Debian (Jenkins agent)
 ```bash
 sudo apt-get install wget apt-transport-https gnupg lsb-release
