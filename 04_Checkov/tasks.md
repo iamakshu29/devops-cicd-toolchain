@@ -73,14 +73,18 @@ checkov \
   --check CKV_AWS_20 \         # run only specific check(s)
   --skip-check CKV_AWS_79 \    # skip specific check(s) — when you have accepted risk
   --soft-fail \                # always exit 0 even if checks fail (report but don't block)
-  --output cli \               # output format: cli | json | junitxml | sarif | github_failed_only
+  --output cli \               # output format: cli (default) | json | junitxml | sarif | github_failed_only
   --output-file-path ./reports/ \  # save report to file
-  --compact                    # show only failed checks (less noise)
+  --quiet                      # show only failed checks (less noise)
+  --compact                    # makes the scan output less verbose and easier to read.
 ```
 
 **`--soft-fail` is the equivalent of Trivy's `--exit-code 0`** — you see the report but the build never fails. Use this when introducing Checkov to a repo that has existing findings you haven't triaged yet.
+  - Check the exit code. `echo $?`
 
 **`--framework` is important:** Without it, Checkov tries to detect the framework automatically, which can be slow and noisy if you have mixed content. Be explicit.
+
+**`--compact`:** Only works when `--output cli`.
 
 ---
 
@@ -199,9 +203,10 @@ Check: CKV_AWS_20: "Ensure the S3 bucket has access control list (ACL) disabled"
 ## Break It on Purpose
 
 **1. Remove `--soft-fail` on a real Terraform directory**
-Take your existing Terraform files (from the Ansible/K8s infra you already have) and run Checkov on them without `--soft-fail`.
+Take your existing Terraform files and run Checkov on them without `--soft-fail`.
 Count the failures. Most real-world Terraform that was written without security checks in mind will have 20–50 failures on first scan.
 This is the experience you need — not a clean example that passes everything, but real messy output that you have to triage.
+- The exit code is 1 i.e. `echo $?`
 
 **2. Introduce a deliberate violation and catch it**
 Add this to a Terraform file:
@@ -221,7 +226,7 @@ Run Checkov. Find the exact CKV rule ID that flags it (CKV_AWS_25). Read what th
 Run `checkov -d terraform/ --framework kubernetes` on a Terraform directory.
 Observe: Checkov either finds 0 checks (no K8s YAML found) or tries to parse `.tf` files as YAML and errors.
 This teaches you that framework detection matters — always be explicit.
-
+- NO OUTPUT
 ---
 
 ## Triage Exercise
@@ -253,12 +258,21 @@ Network (7 failures):
 
 **Work through these:**
 1. Rank these 4 categories by risk priority (fix first to fix last). Justify your order.
-2. `CKV_AWS_1` (IAM allows `*` actions) — this is a wildcard policy someone wrote for convenience. It is used by the deployment pipeline's service account. How do you fix it without breaking the pipeline?
-3. `CKV_AWS_86` (CloudFront logging) — your team says "we don't use CloudFront in production." The check still fires on a dev-environment resource. How do you suppress just this one resource without suppressing the rule globally?
-4. The 5 S3 access logging failures — these buckets are internal CI artifact storage. Access logging would write logs to another S3 bucket, which itself needs access logging. Is there a practical stopping point? How do most teams handle this?
-5. You have `--soft-fail` active. Your security team wants to enforce that at least the HIGH risk findings (open SSH, wildcard IAM) block the pipeline. How do you configure this — you cannot remove `--soft-fail` because the team isn't ready to fix everything.
+- IAM -> Network -> Encryption -> Logging
+> REASON - I will fix Network failures first, so that outside user can access the EC2 and hack our app. Then I fixed the Encryption Failures so that even in case of secrets leak, the Key rotate them, S3 encrpyted and disabled public access for security. Then I resolve IAM policies as they attached to the user, user can delete or make changes with the infra code even if not intended to do so. At last the loggic failures.
 
-*(Answer to 5: Use `--check CKV_AWS_25,CKV_AWS_1` to run only the critical checks with hard fail, and run a separate `--soft-fail` pass for everything else. Or remove `--soft-fail` and use `--skip-check` for the non-critical ones you accept.)*
+2. `CKV_AWS_1` (IAM allows `*` actions) — this is a wildcard policy someone wrote for convenience. It is used by the deployment pipeline's service account. How do you fix it without breaking the pipeline?
+- Edit the same policy by adding required actions. So that the serviceAccount dont need to attach to a new policy ARN.
+
+3. `CKV_AWS_86` (CloudFront logging) — your team says "we don't use CloudFront in production." The check still fires on a dev-environment resource. How do you suppress just this one resource without suppressing the rule globally?
+- Add the comment above the resource, with proper description. So that the checkov skipped this resource while scanning the dev-env.
+- `Check: CKV_AWS_86: "Ensure the logging is disabled, not specific team requirement"`
+
+4. The 5 S3 access logging failures — these buckets are internal CI artifact storage. Access logging would write logs to another S3 bucket, which itself needs access logging. Is there a practical stopping point? How do most teams handle this?
+- disabled logging and add the check comment for checkov, so it cannot be shown as failure while scanning.
+
+5. You have `--soft-fail` active. Your security team wants to enforce that at least the HIGH risk findings (open SSH, wildcard IAM) block the pipeline. How do you configure this — you cannot remove `--soft-fail` because the team isn't ready to fix everything.
+- Use `--check CKV_AWS_25,CKV_AWS_1` to run only the critical checks with hard fail, and run a separate `--soft-fail` pass for everything else.
 
 ---
 

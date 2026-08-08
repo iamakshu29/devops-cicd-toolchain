@@ -1,0 +1,26 @@
+dockerfile scan results:
+
+Passed checks: 59, Failed checks: 1, Skipped checks: 0
+
+Check: CKV_DOCKER_2: "Ensure that HEALTHCHECK instructions have been added to container images"
+	FAILED for resource: /Dockerfile.
+	File: /Dockerfile:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/docker-policies/docker-policy-index/ensure-that-healthcheck-instructions-have-been-added-to-container-images
+
+		1  | # Stage 1 — build the JAR
+		2  | FROM maven:3.9-eclipse-temurin-17 AS builder
+		3  | WORKDIR /app
+		4  | COPY pom.xml .
+		5  | # Download dependencies separately so Docker cache reuses this layer on code-only changes
+		6  | RUN mvn dependency:go-offline -q
+		7  | COPY src/ ./src/
+		8  | RUN mvn clean package -DskipTests -q
+		9  | 
+		10 | # Stage 2 — minimal runtime image
+		11 | FROM eclipse-temurin:17-jre-alpine
+		12 | RUN addgroup -S app && adduser -S app -G app
+		13 | WORKDIR /app
+		14 | COPY --from=builder --chown=app:app /app/target/*.jar app.jar
+		15 | USER app
+		16 | EXPOSE 8080
+		17 | ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,0 +1,24 @@
+terraform scan results:
+
+Passed checks: 44, Failed checks: 5, Skipped checks: 0
+
+Check: CKV_AWS_135: "Ensure that EC2 is EBS optimized"
+	FAILED for resource: aws_instance.jenkins["jenkins_master"]
+	File: \ec2.tf:12-40
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/ensure-that-ec2-is-ebs-optimized
+Check: CKV_AWS_79: "Ensure Instance Metadata Service Version 1 is not enabled"
+	FAILED for resource: aws_instance.jenkins["jenkins_master"]
+	File: \ec2.tf:12-40
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-general-policies/bc-aws-general-31
+Check: CKV_AWS_23: "Ensure every security group and rule has a description"
+	FAILED for resource: aws_vpc_security_group_ingress_rule.allow_tls_ipv4_jenkins_server_rule
+	File: \sg.tf:13-22
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-31
+Check: CKV_AWS_23: "Ensure every security group and rule has a description"
+	FAILED for resource: aws_vpc_security_group_egress_rule.allow_all_traffic_ipv4_jenkins_server_rule["jenkins_master"]
+	File: \sg.tf:24-30
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/networking-31
+Check: CKV2_AWS_5: "Ensure that Security Groups are attached to another resource"
+	FAILED for resource: aws_security_group.jenkins_sg["jenkins_master"]
+	File: \sg.tf:1-10
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/aws-policies/aws-networking-policies/ensure-that-security-groups-are-attached-to-ec2-instances-or-elastic-network-interfaces-enis
