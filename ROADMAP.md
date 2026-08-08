@@ -72,12 +72,12 @@ Final pipeline has **8 active stages** + post block.
 
 Tools that need a running server (Docker recommended for learning):
 
-| Tool | Run as | Port | Notes |
-|------|--------|------|-------|
-| Jenkins | Docker or native | 8080 | You already have this |
-| SonarQube | Docker (+ PostgreSQL) | 9000 | Needs 2GB RAM minimum |
-| Nexus | Docker | 8081 (UI), 8082 (Docker repo) | Needs persistent volume |
-| Vault | Docker (dev mode) or K8s Helm | 8200 | K8s integration needs Helm chart |
+| Tool      | Run as                        | Port                          | Notes                            |
+| -----------| -------------------------------| -------------------------------| ----------------------------------|
+| Jenkins   | Docker or native              | 8080                          | You already have this            |
+| SonarQube | Docker (+ PostgreSQL)         | 9000                          | Needs 2GB RAM minimum            |
+| Nexus     | Docker                        | 8081 (UI), 8082 (Docker repo) | Needs persistent volume          |
+| Vault     | Docker (dev mode) or K8s Helm | 8200                          | K8s integration needs Helm chart |
 
 Tools that are just CLIs (installed on Jenkins agent):
 
@@ -93,7 +93,7 @@ Tools that are just CLIs (installed on Jenkins agent):
 ## File Reading Order
 
 ```
-1. 00_Setup/00-Setup.md                          → Read first. Provision your environment before anything else.
+1. 00_Setup/00-Setup.md                 → Read first. Provision your environment before anything else.
 2. Pipeline-Architecture-Reference.md   → Read once to understand the full picture.
 3. 01_SonarQube/tasks.md                → Set up SonarQube, run the stage, verify it works.
 4. 02 → 09 (one at a time)              → Add each tool's stage, verify before moving on.
