@@ -31,7 +31,7 @@ spec:
       containers:
         - name: workload
           # Update this tag after each Jenkins build
-          image: nexus:8082/petclinic:latest
+          image: nexus:8082/petclinic:1
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: postgres
