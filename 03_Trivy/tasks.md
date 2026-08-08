@@ -95,7 +95,7 @@ trivy image \
   --exit-code 1 \               # exit 1 if vulnerabilities found (fails Jenkins stage)
   --severity HIGH,CRITICAL \    # only report/fail on HIGH and CRITICAL (ignore LOW/MEDIUM)
   --ignore-unfixed \            # skip vulns that have no fix available yet
-  --format table \              # output format: table | json | sarif | cyclonedx
+  --format json \              # output format: table (default) | json | sarif | cyclonedx
   --output trivy-report.json \  # save report to file (omit to print to stdout)
   --cache-dir /tmp/trivy-cache \ # where to cache the vulnerability database
   nexus:8082/sample-app:42
@@ -277,9 +277,12 @@ Total: 47 (HIGH: 5, CRITICAL: 2)
 **Work through these:**
 1. `libssl3` CRITICAL — fix available. This is an OS package in the base image, not your code. How do you fix it: rebuild the image (base image update will pull the patched package) or modify your Dockerfile with `RUN apt-get upgrade`?
 2. `libcurl4` CRITICAL — no fix available. Your pipeline has `--exit-code 1 --severity CRITICAL`. This blocks every build. What do you do?
+- I will use the `--ignore-unfixed` flag to ignore this vulnerability as there is No Fix available for this error.
+
 3. `jackson-databind` HIGH — fix available, just a version bump in pom.xml. Straightforward. What is the risk of not fixing it?
 4. The 42 MEDIUM/LOW unfixed findings — you used `--ignore-unfixed`. They do not appear. Is this the right call for a production pipeline? What is the argument against ignoring them?
-5. After fixing libssl3 (base image rebuild) and jackson-databind (version bump), your next build shows `libssl3` CRITICAL again. Why? *(Answer: base image tag `ubuntu:22.04` is mutable — the same tag now points to an older digest. Use digest pinning: `FROM ubuntu@sha256:xxx`)*
+5. After fixing libssl3 (base image rebuild) and jackson-databind (version bump), your next build shows `libssl3` CRITICAL again. Why? 
+- base image tag `ubuntu:22.04` is mutable — the same tag now points to an older digest. Use digest pinning: `FROM ubuntu@sha256:xxx`
 
 ---
 
