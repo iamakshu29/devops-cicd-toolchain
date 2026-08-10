@@ -11,10 +11,10 @@ OWASP Dependency Check scans your project's **dependency manifest** (pom.xml, re
 
 **Difference from Trivy (important for interviews):**
 
-| Tool | What it scans | When it runs |
-|------|--------------|-------------|
-| OWASP DC | App library dependencies (source-level) | After build, before Docker build |
-| Trivy | Container image (OS packages + libraries in the image) | After Docker build |
+| Tool     | What it scans                                          | When it runs                     |
+| ----------| --------------------------------------------------------| ----------------------------------|
+| OWASP DC | App library dependencies (source-level)                | After build, before Docker build |
+| Trivy    | Container image (OS packages + libraries in the image) | After Docker build               |
 
 They overlap but are not duplicates. OWASP DC catches the library earlier (before you even build an image). Trivy catches everything in the final image including OS vulnerabilities.
 
@@ -55,6 +55,7 @@ Jenkins — dependencyCheckPublisher reads the XML report
 ## Infrastructure Setup
 
 No separate server to run. The tool installs as a Jenkins plugin and downloads its database to the Jenkins agent's workspace.
+Plugin Name - `OWASP Dependency-Check, Version:5.6.4`
 
 **One prerequisite:** The Jenkins agent needs internet access to download the NVD database. The database is updated daily — OWASP DC re-downloads it if the local copy is older than 4 hours.
 
@@ -75,8 +76,8 @@ Since 2023, NVD rate-limits unauthenticated downloads significantly. Without an 
 2. Click **Add Dependency-Check**
    - Name: `Dependency-Check` ← referenced in Jenkinsfile's `odcInstallation` parameter
    - Check **Install automatically**
-   - Pick the latest version
-3. Save
+   - Add Installer -> Install from github.com
+3. Apply & Save
 
 ### Step 3 — (Optional) Add NVD API Key
 If you have an NVD API key, add it as a Jenkins credential:
