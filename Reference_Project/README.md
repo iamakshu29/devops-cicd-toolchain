@@ -141,9 +141,15 @@ kubectl exec -it postgres-0 -- sh
 ```
 
 ### 9. Insert the type values
+The `types` table is required reference data for the PetClinic app — `pet_type` is a required field when adding a pet. Hibernate (`DDL_AUTO=update`) creates the table schema but does not seed it with data, so it must be populated manually after first deployment.
+
 ```sh
-kubectl exec -it postgres-0 -- sh
-INSERT into type ...
+kubectl exec -it postgres-0 -n petclinic-dev -- psql -U petclinic -d petclinic
+
+INSERT INTO types (name) VALUES ('cat'), ('dog'), ('lizard'), ('snake'), ('bird'), ('hamster');
+
+-- Verify
+SELECT * FROM types;
 ```
 
 ### 10. PostgreSQL Verification from Kubernetes
@@ -163,8 +169,17 @@ psql -U petclinic -d petclinic
 \d owners  # describe owners table
 
 To Check the data
-show * from owners
-show * from pets
+select * from owners
+select * from pets
+```
+
+### 11. Access
+Add petclinic.local to hosts file
+```bash
+curl -k https://petclinic.local
+
+# Web
+https://petclinic.local
 ```
 
 ### 11. Final Kubernetes State
