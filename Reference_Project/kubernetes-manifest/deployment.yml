@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: petclinic-app
+  name: petclinic-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: petclinic-app
+  template:
+    metadata:
+      labels:
+        app: petclinic-app
+    spec:
+      containers:
+      - image: maramaroua/spring-petclinic
+        name: petclinic
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://postgres-svc:5432/petclinic
+
+        - name: SPRING_DATASOURCE_USERNAME
+          value: petclinic
+
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: update
+        resources: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-app-svc
+  labels:
+    app: petclinic-app-svc
+spec:
+  ports:
+  - port: 8080
+  selector:
+    app: petclinic-app

@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: dev-role
+  namespace: petclinic-dev
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+
+
+# kubectl create role dev-role --verb=get,list,watch --resource=deployment,statefulset,configmap,services -n petclinic-dev --dry-run=client -o yaml > role.yml

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: "postgres-svc"
+  replicas: 1
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: postgres
+        image: postgres:15
+
+        env:
+        - name: POSTGRES_USER
+          value: petclinic
+
+        - name: POSTGRES_DB
+          value: petclinic
+      
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+      
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - petclinic
+            - -d
+            - petclinic
+          initialDelaySeconds: 5
+          periodSeconds: 5 
+
+  volumeClaimTemplates:
+  - metadata:
+      name: db-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-svc
+  labels:
+    app: postgres
+spec:
+  ports:
+  - port: 5432
+    name: db
+  clusterIP: None
+  selector:
+    app: postgres
