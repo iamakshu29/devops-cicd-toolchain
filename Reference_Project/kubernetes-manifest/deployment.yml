@@ -4,8 +4,14 @@ metadata:
   labels:
     app: petclinic-app
   name: petclinic-app
+  namespace: petclinic-dev
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 1   
   selector:
     matchLabels:
       app: petclinic-app
@@ -15,8 +21,9 @@ spec:
         app: petclinic-app
     spec:
       containers:
-      - image: maramaroua/spring-petclinic
+      - image: docker.io/maramaroua/spring-petclinic
         name: petclinic
+
         env:
         - name: SPRING_DATASOURCE_URL
           value: jdbc:postgresql://postgres-svc:5432/petclinic
@@ -32,16 +39,36 @@ spec:
         
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: update
-        resources: {}
+        
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: petclinic-app-svc
+  name: petclinic-svc
+  namespace: petclinic-dev
   labels:
-    app: petclinic-app-svc
+    app: petclinic-svc
 spec:
   ports:
   - port: 8080

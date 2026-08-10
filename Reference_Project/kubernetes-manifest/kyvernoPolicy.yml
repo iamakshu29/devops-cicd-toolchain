@@ -1,0 +1,64 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: require-resource-limits
+  namespace: petclinic-dev
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: check-resource-limits
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+    validate:
+      message: "CPU and memory limits are required on all containers."
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+                cpu: "?*"
+
+---
+
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-ns-labels
+  namespace: petclinic-dev
+spec:
+  rules:
+  - name: add-managed-by-label
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+    mutate:
+      patchStrategicMerge:
+        metadata:
+          labels:
+            managed-by: dev-team
+
+---
+
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: restrict-image-registries
+  namespace: petclinic-dev
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: validate-registries
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+    validate:
+      message: "Images must come from docker.io, gcr.io, or quay.io only."
+      pattern:
+        spec:
+          containers:
+          - image: "docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"

@@ -1,8 +1,8 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  creationTimestamp: null
   name: petclinic-hpa
+  namespace: petclinic-dev
 spec:
   maxReplicas: 5
   minReplicas: 2
@@ -10,6 +10,3 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: petclinic-app
-status:
-  currentReplicas: 0
-  desiredReplicas: 0

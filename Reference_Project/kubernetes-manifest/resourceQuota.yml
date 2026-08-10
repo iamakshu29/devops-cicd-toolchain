@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: dev-resource-quota
-  namespace: dev
+  namespace: petclinic-dev
 spec:
   hard:
     requests.cpu: "1"
