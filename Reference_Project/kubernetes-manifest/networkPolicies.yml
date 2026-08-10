@@ -46,9 +46,7 @@ spec:
           app.kubernetes.io/instance: ingress-nginx
     ports:
     - protocol: TCP
-      port: 80
-    - protocol: TCP
-      port: 443
+      port: 8080
 
   egress:
   - to:
