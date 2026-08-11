@@ -5,14 +5,14 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   hard:
-    requests.cpu: {{ .Values.hard.requests.cpu }}
-    requests.memory: {{ .Values.hard.requests.memory }}
-    limits.cpu: {{ .Values.hard.limits.cpu }}
-    limits.memory: {{ .Values.hard.limits.memory }}
-    configmaps: {{ .Values.hard.configmaps }}
-    persistentvolumeclaims: {{ .Values.hard.persistentvolumeclaims }}
-    pods: {{ .Values.hard.pods }}
-    replicationcontrollers: {{ .Values.hard.replicationcontrollers }}
-    secrets: {{ .Values.hard.secrets }}
-    services: {{ .Values.hard.services }}
-    services.loadbalancers: {{ .Values.hard.services.loadbalancers }}
+    requests.cpu: {{ index .Values.resourceQuota.hard "requests.cpu" | quote }}
+    requests.memory: {{ index .Values.resourceQuota.hard "requests.memory" | quote }}
+    limits.cpu: {{ index .Values.resourceQuota.hard "limits.cpu" | quote }}
+    limits.memory: {{ index .Values.resourceQuota.hard "limits.memory" | quote }}
+    configmaps: {{ .Values.resourceQuota.hard.configmaps | quote }}
+    persistentvolumeclaims: {{ .Values.resourceQuota.hard.persistentvolumeclaims | quote }}
+    pods: {{ .Values.resourceQuota.hard.pods | quote }}
+    replicationcontrollers: {{ .Values.resourceQuota.hard.replicationcontrollers | quote }}
+    secrets: {{ .Values.resourceQuota.hard.secrets | quote }}
+    services: {{ .Values.resourceQuota.hard.services | quote }}
+    services.loadbalancers: {{ index .Values.resourceQuota.hard "services.loadbalancers" | quote }}

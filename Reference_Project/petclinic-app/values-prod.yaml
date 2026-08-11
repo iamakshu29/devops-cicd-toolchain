@@ -24,8 +24,8 @@ appName: petclinic
 dbName: postgres
 
 app:
-  replicas: 2
-  maxUnavailable: 2
+  replicas: 4
+  maxUnavailable: 3
   maxSurge: 1
   containerImage: docker.io/maramaroua/spring-petclinic
   env:
@@ -57,8 +57,8 @@ app:
   # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
   autoscaling:
     enabled: false
-    minReplicas: 3
-    maxReplicas: 5
+    minReplicas: 4
+    maxReplicas: 8
     targetCPUUtilizationPercentage: 80
 
   ingress:
@@ -67,7 +67,7 @@ app:
 
 
 db:
-  replicas: 1
+  replicas: 2
   minReadySeconds: 10
   containerImage: docker.io/postgres:15
   env:
