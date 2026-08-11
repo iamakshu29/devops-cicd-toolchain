@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: dev-role-binding
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -10,6 +10,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.appName }}-sa
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 
 #  kubectl create rolebinding dev-role-binding --role=dev-role --serviceaccount=petclinic-dev:petclinic-sa -n petclinic-dev --dry-run=client -o yaml > rolebinding.yml

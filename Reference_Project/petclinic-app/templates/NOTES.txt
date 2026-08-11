@@ -1,0 +1,16 @@
+Release "{{ .Release.Name }}" deployed to namespace "{{ .Release.Namespace }}".
+
+Access the application at: https://{{ .Values.appName }}.local
+  (Ensure {{ .Values.appName }}.local is mapped to your Ingress Controller IP in /etc/hosts)
+
+Database: {{ .Values.dbName }} (StatefulSet) reachable at {{ .Values.dbName }}-svc:{{ .Values.db.servicePort }}
+
+{{- if .Values.app.autoscaling.enabled }}
+HPA enabled — scaling between {{ .Values.app.autoscaling.minReplicas }} and {{ .Values.app.autoscaling.maxReplicas }} replicas.
+{{- else }}
+HPA disabled — running {{ .Values.app.replicas }} replica(s). Set app.autoscaling.enabled=true to enable.
+{{- end }}
+
+Verify deployment:
+  kubectl get pods -n {{ .Release.Namespace }}
+  kubectl get ingress -n {{ .Release.Namespace }}

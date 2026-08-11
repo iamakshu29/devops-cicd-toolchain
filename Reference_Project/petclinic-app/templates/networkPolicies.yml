@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: network-policy-one
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 spec:
   podSelector:
     matchLabels:
@@ -26,7 +26,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: network-policy-two
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 spec:
   podSelector:
     matchLabels:
@@ -61,8 +61,8 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: kube-system
       podSelector:
-      matchLabels:
-        k8s-app: kube-dns
+        matchLabels:
+          k8s-app: kube-dns
     ports:
     - protocol: UDP
       port: 53

@@ -2,7 +2,7 @@ apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
   name: require-resource-limits
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 spec:
   validationFailureAction: Enforce
   rules:
@@ -27,7 +27,7 @@ apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
   name: add-ns-labels
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 spec:
   rules:
   - name: add-managed-by-label
@@ -47,7 +47,7 @@ apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
   name: restrict-image-registries
-  namespace: petclinic-dev
+  namespace: {{ .Release.Namespace }}
 spec:
   validationFailureAction: Enforce
   rules:

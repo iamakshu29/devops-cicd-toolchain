@@ -43,9 +43,6 @@ app:
   env:
     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-svc:5432/petclinic
     SPRING_DATASOURCE_USERNAME: petclinic
-    SPRING_DATASOURCE_PASSWORD:
-      name:
-      key:
 
   livenessProbe:
     tcpSocket:
@@ -88,9 +85,6 @@ db:
   env:
     POSTGRES_USER: petclinic
     POSTGRES_DB: petclinic
-    POSTGRES_PASSWORD:
-      name: postgres-secret
-      key: POSTGRES_PASSWORD
   volumeName: db-data
   mountPath: /var/lib/postgresql/data
   pvcStorage: 1Gi
@@ -111,6 +105,12 @@ db:
 
 
 CAIssuer: selfsigned-issuer
+
+secret:
+  postgres:
+    name: postgres-secret
+    key: POSTGRES_PASSWORD
+    password: petclinic
 
 limitRange:
   default:
