@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.appName }}-ingress
+  namespace: petclinic-dev
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ .Values.appName }}.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ .Values.appName }}-svc
+            port:
+              number: {{ .Values.app.ingress.port }}
+        path: {{ .Values.app.ingress.path }}
+        pathType: Prefix
+  tls:
+  - hosts:
+    - {{ .Values.appName }}.local
+    secretName: {{ .Values.appName }}-tls-secret
+status:
+  loadBalancer: {}
+
+# kubectl create ingress petclinic-ingress --class=nginx \
+# --rule="petclinic.local/*=petclinic-svc:8080,tls=petclinic-tls-secret" \
+# -n petclinic-dev --dry-run=client -o yaml > ingress.yml

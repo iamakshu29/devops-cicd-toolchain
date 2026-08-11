@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.dbName }}
+  namespace: petclinic-dev
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.dbName }}
+  serviceName: {{ .Values.dbName }}-svc
+  replicas: {{ .Values.db.replicas }}
+  minReadySeconds: {{ .Values.db.minReadySeconds }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.dbName }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: {{ .Values.dbName }}
+        image: {{ .Values.db.containerImage }}
+
+        env:
+        - name: POSTGRES_USER
+          value: {{ .Values.db.env.POSTGRES_USER }}
+
+        - name: POSTGRES_DB
+          value: {{ .Values.db.env.POSTGRES_DB }}
+      
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.db.env.POSTGRES_PASSWORD.name }}
+              key: {{ .Values.db.env.POSTGRES_PASSWORD.key }}
+
+        volumeMounts:
+        - name: {{ .Values.db.volumeName }}
+          mountPath: {{ .Values.db.mountPath }}
+      
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - petclinic
+            - -d
+            - petclinic
+          initialDelaySeconds: {{ .Values.db.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.db.readinessProbe.periodSeconds }}
+
+        resources:
+          requests:
+            cpu: {{ .Values.db.resources.requests.cpu }}
+            memory: {{ .Values.db.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.db.resources.limits.cpu }}
+            memory: {{ .Values.db.resources.limits.memory }}
+
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Values.db.volumeName }}
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: {{ .Values.db.pvcStorage }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dbName }}-svc
+  namespace: petclinic-dev
+  labels:
+    app: {{ .Values.dbName }}
+spec:
+  ports:
+  - port: {{ .Values.db.servicePort }}
+  clusterIP: None
+  selector:
+    app: {{ .Values.dbName }}

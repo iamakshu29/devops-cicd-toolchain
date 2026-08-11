@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-resource-quota
+  namespace: petclinic-dev
+spec:
+  hard:
+    requests.cpu: {{ .Values.hard.requests.cpu }}
+    requests.memory: {{ .Values.hard.requests.memory }}
+    limits.cpu: {{ .Values.hard.limits.cpu }}
+    limits.memory: {{ .Values.hard.limits.memory }}
+    configmaps: {{ .Values.hard.configmaps }}
+    persistentvolumeclaims: {{ .Values.hard.persistentvolumeclaims }}
+    pods: {{ .Values.hard.pods }}
+    replicationcontrollers: {{ .Values.hard.replicationcontrollers }}
+    secrets: {{ .Values.hard.secrets }}
+    services: {{ .Values.hard.services }}
+    services.loadbalancers: {{ .Values.hard.services.loadbalancers }}

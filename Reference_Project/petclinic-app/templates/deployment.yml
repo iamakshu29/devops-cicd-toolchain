@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.appName }}-app
+  name: {{ .Values.appName }}-app
+  namespace: petclinic-dev
+spec:
+  replicas: {{ .Values.app.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.app.maxUnavailable }}
+      maxSurge: {{ .Values.app.maxSurge }}   
+  selector:
+    matchLabels:
+      app: {{ .Values.appName }}-app
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appName }}-app
+    spec:
+      containers:
+      - image: {{ .Values.app.containerImage }}
+        name: {{ .Values.appName }}
+
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: {{ .Values.app.env.SPRING_DATASOURCE_URL }}
+
+        - name: SPRING_DATASOURCE_USERNAME
+          value: {{ .Values.app.env.SPRING_DATASOURCE_USERNAME }}
+
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.app.env.SPRING_DATASOURCE_PASSWORD.name }}
+              key: {{ .Values.app.env.SPRING_DATASOURCE_PASSWORD.key }}
+        
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: update
+        
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.app.livenessProbe.tcpSocket.port }}
+          initialDelaySeconds: {{ .Values.app.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
+
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.app.readinessProbe.tcpSocket.port }}
+          initialDelaySeconds: {{ .Values.app.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}
+
+        resources:
+          requests:
+            cpu: {{ .Values.app.resources.requests.cpu }}
+            memory: {{ .Values.app.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.app.resources.limits.cpu }}
+            memory: {{ .Values.app.resources.limits.memory }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.appName }}-svc
+  namespace: petclinic-dev
+  labels:
+    app: {{ .Values.appName }}-svc
+spec:
+  ports:
+  - port: {{ .Values.app.servicePort }}
+  selector:
+    app: {{ .Values.appName }}-app

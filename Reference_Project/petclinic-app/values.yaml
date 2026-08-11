@@ -1,0 +1,141 @@
+# Default values for petclinic-app.
+# This is a YAML-formatted file.
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+
+appName: petclinic
+dbName: postgres
+
+app:
+  replicas: 2
+  maxUnavailable: 2
+  maxSurge: 1
+  containerImage: docker.io/maramaroua/spring-petclinic
+  env:
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-svc:5432/petclinic
+    SPRING_DATASOURCE_USERNAME: petclinic
+    SPRING_DATASOURCE_PASSWORD:
+      name:
+      key:
+
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+  readinessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  servicePort: 8080
+
+  # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+
+  ingress:
+    port: 8080
+    path: /
+
+
+db:
+  replicas: 1
+  minReadySeconds: 10
+  containerImage: docker.io/postgres:15
+  env:
+    POSTGRES_USER: petclinic
+    POSTGRES_DB: petclinic
+    POSTGRES_PASSWORD:
+      name: postgres-secret
+      key: POSTGRES_PASSWORD
+  volumeName: db-data
+  mountPath: /var/lib/postgresql/data
+  pvcStorage: 1Gi
+
+  readinessProbe:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  servicePort: 5432
+
+
+CAIssuer: selfsigned-issuer
+
+limitRange:
+  default:
+    cpu: 500m
+    memory: 512Mi
+  defaultRequest:
+    cpu: 250m
+    memory: 256Mi
+  max:
+    cpu: "1"
+    memory: 1Gi
+  min:
+    cpu: 100m
+    memory: 128Mi
+
+resourceQuota:
+  hard:
+    requests.cpu: "1"
+    requests.memory: "1Gi"
+    limits.cpu: "2"
+    limits.memory: "2Gi"
+    configmaps: "10"
+    persistentvolumeclaims: "4"
+    pods: "4"
+    replicationcontrollers: "20"
+    secrets: "10"
+    services: "10"
+    services.loadbalancers: "2"

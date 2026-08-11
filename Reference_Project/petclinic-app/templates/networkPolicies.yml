@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: network-policy-one
+  namespace: petclinic-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+
+  policyTypes:
+  - Ingress # allowed incoming traffic from app to db
+
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: {{ .Values.appName }}-app
+    ports:
+    - protocol: TCP
+      port: {{ .Values.db.servicePort }}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: network-policy-two
+  namespace: petclinic-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.appName }}-app
+
+  policyTypes:
+  - Ingress # allowed incoming traffic from ingress to app
+  - Egress # allowed outgoing traffic to db from app
+
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          app.kubernetes.io/instance: ingress-nginx
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: {{ .Values.app.servicePort }}
+
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: {{ .Values.dbName }}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.db.servicePort }}
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+      matchLabels:
+        k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
