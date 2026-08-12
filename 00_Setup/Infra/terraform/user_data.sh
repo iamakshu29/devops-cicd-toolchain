@@ -17,7 +17,7 @@ cat > /home/ubuntu/cicd/docker-compose.yml <<'EOF'
 version: "3.8"
 services:
   sonarqube:
-    image: sonarqube:10-community
+    image: sonarqube:26.8.0.126808-community
     container_name: sonarqube
     depends_on: [sonar-db]
     ports:
