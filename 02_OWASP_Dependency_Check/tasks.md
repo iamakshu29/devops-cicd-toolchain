@@ -84,7 +84,7 @@ If you have an NVD API key, add it as a Jenkins credential:
 1. **Manage Jenkins** → **Credentials** → **System** → **Global credentials**
 2. Add credential:
    - Kind: **Secret text**
-   - Secret: your NVD API key
+   - Secret: your NVD API key (775d3454-dffc-49f4-9d34-7e5502adc197)
    - ID: `nvd-api-key`
 
 Then reference it in the Jenkinsfile stage (see below).
