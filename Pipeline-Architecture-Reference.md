@@ -31,7 +31,7 @@ Developer pushes code to GitHub
   │    └── checkov -d terraform/ → fail if Terraform has misconfigs           │
   │                                                                           │
   │  Stage 3: Build                                                           │
-  │    └── mvn clean package (compiles app, runs unit tests)                 │
+  │    └── mvn clean verify -DskipTests (compiles src + test classes)        │
   │                                                                           │
   │  Stage 4: SonarQube Analysis                                              │
   │    └── Scanner sends code to SonarQube Server → analysis runs async       │
@@ -195,6 +195,11 @@ ArgoCD is covered in the ArgoCD section (Step 1 in context.md). This pipeline as
 pipeline {
     agent any
 
+    tools {
+        // must match name in Manage Jenkins → Tools → Maven installations
+        maven 'maven'
+    }
+
     environment {
         NEXUS_REGISTRY  = 'nexus:8082'
         IMAGE_NAME      = "${NEXUS_REGISTRY}/sample-app"
@@ -218,14 +223,16 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                // verify compiles classes into target/classes, which Sonar's Java analyzer requires
+                sh 'mvn clean verify -DskipTests'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT}"
+                    // fully qualified plugin — avoids "No plugin found for prefix 'sonar'" on restricted agents
+                    sh "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=${SONAR_PROJECT}"
                 }
             }
         }

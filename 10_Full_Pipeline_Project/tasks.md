@@ -188,6 +188,7 @@ Work through these in order. Each step references the tool's tasks.md for the de
   - `github-credentials` — Username/password (GitHub PAT for GitOps repo push)
   - `slack-webhook` — Secret text (Slack webhook URL)
 - [ ] Configure SonarQube server: Manage Jenkins → System → SonarQube servers
+- [ ] Configure Maven tool: Manage Jenkins → Tools → Maven installations → Add Maven → name: `maven` → Install automatically
 - [ ] Configure SonarQube Scanner tool: Manage Jenkins → Tools
 - [ ] Configure Dependency-Check tool: Manage Jenkins → Tools
 - [ ] Set Jenkins URL: Manage Jenkins → System → Jenkins URL → your server IP
@@ -307,6 +308,11 @@ spec:
 pipeline {
     agent any
 
+    tools {
+        // must match name in Manage Jenkins → Tools → Maven installations
+        maven 'maven'
+    }
+
     environment {
         NEXUS_REGISTRY  = 'nexus:8082'
         IMAGE_NAME      = "${NEXUS_REGISTRY}/sample-app"
@@ -338,14 +344,16 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                // verify (not package) — compiles classes into target/classes, which Sonar's Java analyzer requires
+                sh 'mvn clean verify -DskipTests'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT}"
+                    // fully qualified plugin — avoids "No plugin found for prefix 'sonar'" on restricted agents
+                    sh "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=${SONAR_PROJECT}"
                 }
             }
         }
