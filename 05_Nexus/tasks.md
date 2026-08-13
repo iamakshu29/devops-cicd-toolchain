@@ -120,7 +120,7 @@ This is the repository where Jenkins pushes images.
 
 ### Step 3 — Create a Service Account for Jenkins
 Do NOT use the admin account in Jenkins credentials. Create a dedicated user.
-
+Plugin Required - `Role-Based Authorization Strategy`
 1. **Administration** → **Security** → **Users** → **Create local user**
    - ID: `jenkins-deployer`
    - Password: strong password (this goes into Jenkins credentials)
