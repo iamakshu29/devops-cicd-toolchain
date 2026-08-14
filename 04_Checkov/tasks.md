@@ -80,7 +80,6 @@ checkov \
 ```
 
 **`--soft-fail` is the equivalent of Trivy's `--exit-code 0`** — you see the report but the build never fails. Use this when introducing Checkov to a repo that has existing findings you haven't triaged yet.
-  - Check the exit code. `echo $?`
 
 **`--framework` is important:** Without it, Checkov tries to detect the framework automatically, which can be slow and noisy if you have mixed content. Be explicit.
 
@@ -113,16 +112,6 @@ stage('Checkov — IaC Scan') {
         }
     }
 }
-```
-
-**To scan K8s manifests too:**
-```groovy
-sh """
-    checkov -d k8s/ \
-      --framework kubernetes \
-      --compact \
-      --soft-fail
-"""
 ```
 
 **Recommended stage order (Checkov goes before Build):**
@@ -177,102 +166,17 @@ Check: CKV_AWS_20: "Ensure the S3 bucket has access control list (ACL) disabled"
 
 ## Common Errors + Debugging
 
-### 1. `ModuleNotFoundError: No module named 'checkov'`
-**Cause:** Checkov is not installed on the Jenkins agent, or installed in a Python env that is not in the PATH
-**Fix:** Verify with `which checkov` on the agent. If using a venv, ensure the symlink to `/usr/local/bin/checkov` exists.
-
-### 2. Checkov finds hundreds of failures on first run
+### 1. Checkov finds hundreds of failures on first run
 **Cause:** This is normal for existing Terraform that was written without security checks. The repo has accumulated technical security debt.
 **Fix:** Use `--soft-fail` initially to get the report without blocking CI. Triage the findings, fix critical ones, and skip accepted risks with inline comments. Then remove `--soft-fail` once findings are under control.
 
-### 3. `Error parsing Terraform file`
+### 2. `Error parsing Terraform file`
 **Cause:** Checkov cannot parse `.tf` files that use Terraform modules with complex variable interpolations, or files with syntax errors
 **Fix:** Run `terraform validate` first to ensure the Terraform is syntactically valid. For module parsing issues, run `terraform init` to download providers, then add `--download-external-modules true` to Checkov.
 
-### 4. Pipeline fails on checks you expected to pass
+### 3. Pipeline fails on checks you expected to pass
 **Cause:** Default Checkov checks are strict. For example, it may flag an EC2 instance for not having `monitoring = true` even if you do not need CloudWatch detailed monitoring.
 **Fix:** Review the specific check ID in the output, read the Checkov docs for that check, and either fix it or skip it with a documented reason.
-
-### 5. JUnit report file not found by Jenkins
-**Error:** `No test report files were found matching 'reports/results_junitxml.xml'`
-**Cause:** Checkov's JUnit output file is named differently depending on the version
-**Fix:** Check what file Checkov actually created in `./reports/` and adjust the `testResults` pattern. Common names: `results_junitxml.xml` or `results_junit.xml`.
-
----
-
-## Break It on Purpose
-
-**1. Remove `--soft-fail` on a real Terraform directory**
-Take your existing Terraform files and run Checkov on them without `--soft-fail`.
-Count the failures. Most real-world Terraform that was written without security checks in mind will have 20–50 failures on first scan.
-This is the experience you need — not a clean example that passes everything, but real messy output that you have to triage.
-- The exit code is 1 i.e. `echo $?`
-
-**2. Introduce a deliberate violation and catch it**
-Add this to a Terraform file:
-```hcl
-resource "aws_security_group_rule" "ssh_open" {
-  type        = "ingress"
-  from_port   = 22
-  to_port     = 22
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]   # open SSH to the world
-  security_group_id = aws_security_group.main.id
-}
-```
-Run Checkov. Find the exact CKV rule ID that flags it (CKV_AWS_25). Read what the check says. Then fix it by changing the CIDR to your VPC range, run again, confirm it passes.
-
-**3. Use wrong `--framework`**
-Run `checkov -d terraform/ --framework kubernetes` on a Terraform directory.
-Observe: Checkov either finds 0 checks (no K8s YAML found) or tries to parse `.tf` files as YAML and errors.
-This teaches you that framework detection matters — always be explicit.
-- NO OUTPUT
----
-
-## Triage Exercise
-
-Checkov scans your Terraform and returns 34 failures. Here are the categories:
-
-```
-FAILED checks: 34
-
-Encryption (8 failures):
-  CKV_AWS_19  - S3 bucket server-side encryption not enabled (3 buckets)
-  CKV_AWS_7   - KMS key rotation not enabled (2 keys)
-  CKV2_AWS_6  - S3 Public Access Block not configured (3 buckets)
-
-Logging (10 failures):
-  CKV_AWS_86  - CloudFront access logging not enabled
-  CKV_AWS_18  - S3 access logging not enabled (5 buckets)
-  CKV_AWS_66  - CloudTrail log file validation not enabled
-
-IAM (9 failures):
-  CKV_AWS_40  - IAM policy attached directly to user (3 users)
-  CKV_AWS_1   - IAM policy allows * actions (2 policies)
-
-Network (7 failures):
-  CKV_AWS_25  - Security group allows 0.0.0.0/0 ingress on port 22 (SSH)
-  CKV_AWS_24  - Security group allows 0.0.0.0/0 ingress on port 3389 (RDP)
-  CKV_AWS_23  - Security group allows 0.0.0.0/0 egress (5 groups)
-```
-
-**Work through these:**
-1. Rank these 4 categories by risk priority (fix first to fix last). Justify your order.
-- IAM -> Network -> Encryption -> Logging
-> REASON - I will fix Network failures first, so that outside user can access the EC2 and hack our app. Then I fixed the Encryption Failures so that even in case of secrets leak, the Key rotate them, S3 encrpyted and disabled public access for security. Then I resolve IAM policies as they attached to the user, user can delete or make changes with the infra code even if not intended to do so. At last the loggic failures.
-
-2. `CKV_AWS_1` (IAM allows `*` actions) — this is a wildcard policy someone wrote for convenience. It is used by the deployment pipeline's service account. How do you fix it without breaking the pipeline?
-- Edit the same policy by adding required actions. So that the serviceAccount dont need to attach to a new policy ARN.
-
-3. `CKV_AWS_86` (CloudFront logging) — your team says "we don't use CloudFront in production." The check still fires on a dev-environment resource. How do you suppress just this one resource without suppressing the rule globally?
-- Add the comment above the resource, with proper description. So that the checkov skipped this resource while scanning the dev-env.
-- `Check: CKV_AWS_86: "Ensure the logging is disabled, not specific team requirement"`
-
-4. The 5 S3 access logging failures — these buckets are internal CI artifact storage. Access logging would write logs to another S3 bucket, which itself needs access logging. Is there a practical stopping point? How do most teams handle this?
-- disabled logging and add the check comment for checkov, so it cannot be shown as failure while scanning.
-
-5. You have `--soft-fail` active. Your security team wants to enforce that at least the HIGH risk findings (open SSH, wildcard IAM) block the pipeline. How do you configure this — you cannot remove `--soft-fail` because the team isn't ready to fix everything.
-- Use `--check CKV_AWS_25,CKV_AWS_1` to run only the critical checks with hard fail, and run a separate `--soft-fail` pass for everything else.
 
 ---
 

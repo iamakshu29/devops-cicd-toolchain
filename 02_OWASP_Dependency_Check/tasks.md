@@ -194,51 +194,13 @@ In your project workspace: `dependency-check-report.html` opens in a browser and
 
 ## Break It on Purpose
 
-**1. Remove `--format XML` — publisher breaks**
+**Remove `--format XML` — publisher breaks**
 Change `additionalArguments` to `--scan ./ --format HTML` only.
 Run the pipeline. `dependencyCheckPublisher` fails: "dependency-check-report.xml was not found."
 The scan ran and produced output, but the wrong format. This teaches you that the HTML report and the XML report are separate outputs — the plugin needs XML to parse results.
 Fix: always include `--format XML`.
 
-**2. Wrong scan path — zero findings reported**
-Change `--scan ./` to `--scan ./nonexistent/`.
-Run the pipeline. The stage completes with 0 dependencies found, 0 vulnerabilities — build is green.
-This is a silent failure. The tool did nothing but reported success.
-Fix: verify the scan path actually contains your dependency manifest. Run `ls ./` in a `sh` step before the scan to confirm.
-
-**3. Block NVD access — see what offline failure looks like**
-Add a firewall rule or simply add a bogus `--nvdDatafeedUrl http://localhost:9999/` argument.
-Run the pipeline. Observe the download error and how long it retries before giving up.
-Fix: restore connectivity OR use `--noupdate` flag (uses whatever local DB copy exists, no refresh).
-
 ---
-
-## Triage Exercise
-
-OWASP DC returns these findings. Decide what to do for each category.
-
-```
-[CRITICAL] CVE-2021-44228 — log4j-core:1.2.17
-           CVSS: 10.0 | Your usage: declared in pom.xml as compile scope
-
-[HIGH]     CVE-2022-22965 — spring-webmvc:5.3.14
-           CVSS: 9.8  | Your usage: core framework, cannot easily remove
-
-[HIGH]     CVE-2021-37136 — netty-codec:4.1.59
-           CVSS: 7.5  | Your usage: test scope only, not in the production JAR
-
-[MEDIUM]   CVE-2022-31692 — spring-security-core:5.6.5
-           CVSS: 6.5  | Fix available: upgrade to 5.6.8 | Requires regression testing
-
-[LOW]      CVE-2016-1000027 — spring-web:5.3.14
-           CVSS: 3.7  | No fix available, known false positive in Spring ecosystem
-```
-
-**Work through these:**
-1. Log4Shell (CVE-2021-44228) — CVSS 10.0, compile scope. This is in production. What is your action and timeline?
-2. The netty CVE is HIGH but test scope only — it never ships in the production artifact. Do you still fix it? What is the correct argument to make to your team?
-3. The Spring Security CVE requires a version upgrade that needs regression testing. Your sprint ends in 2 days. How do you handle this in the pipeline without disabling the check?
-4. The Spring Web LOW CVE has no fix available. How do you suppress it permanently with justification so it stops appearing in every report?
 
 **Notes (read after deciding):**
 - Test-scope dependencies that do not appear in the production artifact are genuinely lower risk — but most security teams still require tracking them. Use `--suppression` with a justification rather than ignoring.

@@ -94,8 +94,8 @@ Run this once to generate your signing keys:
 ```bash
 # Generates cosign.key (private) and cosign.pub (public)
 cosign generate-key-pair
-# You will be prompted for a password to protect the private key
-# Enter a strong password — you will need it when signing
+  # You will be prompted for a password to protect the private key
+  # Enter a strong password — you will need it when signing
 ```
 
 This creates:
@@ -123,10 +123,9 @@ This creates:
 From your Terminal
 
 ```bash
-cosign sign --key cosign.key --yes registry.example.com/sample-app:v1
-# OR
 # Use immutable image digest instead of tag (Recommended)
-cosign sign --key cosign.key --yes registry.example.com/sample-app:@sha256:<DIGEST>
+docker inspect image # To get the digest
+cosign sign --key cosign.key --yes <DIGEST>
 ```
 ---
 
@@ -143,12 +142,9 @@ docker inspect --format='{{index .RepoDigests 0}}' nexus:8082/sample-app:42
 
 # For Jenkins use it like this
 DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$tag")
-
-# | cut -d'@' -f2 extracts only the hash: sha256:abc123...
-# Use this if you need just the hash to construct the ref yourself
-docker inspect --format='{{index .RepoDigests 0}}' nexus:8082/sample-app:42 | cut -d'@' -f2
 ```
 
+**IMPORTANT**
 This only works **after** the image has been pushed (RepoDigests is empty before push). If the image was just built and pushed in the same pipeline, the digest is available immediately in the same shell session.
 
 ---
@@ -178,7 +174,7 @@ stage('Cosign — Sign Image') {
 **`--yes`** skips the interactive confirmation prompt (required for non-interactive CI environments).
 **`--allow-insecure-registry`** is required when Nexus uses HTTP (not HTTPS).
 
-**The image must already be in the registry** (pushed to Nexus in the previous stage) before you can sign it. Cosign needs to reach the registry to fetch the digest.
+**The image must already be in the registry** (pushed to Registry in the previous stage) before you can sign it. Cosign needs to reach the registry to fetch the digest.
 
 ---
 
@@ -279,11 +275,7 @@ REGISTRY_USERNAME=jenkins-deployer REGISTRY_PASSWORD=pass \
 cosign sign --key cosign.key --allow-insecure-registry nexus:8082/sample-app:42
 ```
 
-### 3. `Error: private key requires a password`
-**Cause:** Key was generated with a password but `COSIGN_PASSWORD` env var is not set
-**Fix:** Set `COSIGN_PASSWORD` environment variable before running cosign, or generate a passwordless key for CI: `cosign generate-key-pair` and press Enter when prompted for password
-
-### 4. Signature verification fails even though nothing changed
+### 3. Signature verification fails even though nothing changed
 **Cause 1:** Wrong public key being used for verification
 **Cause 2:** Image was re-pushed with the same tag after signing — the digest changed, signature is now invalid
 **Fix:** Never re-push to a signed tag. Use immutable tags (build number) rather than `latest` for production images.
@@ -303,24 +295,6 @@ docker push nexus:8082/sample-app:42
 Now verify: `cosign verify --key cosign.pub nexus:8082/sample-app:42`
 Observe: verification fails — the image digest changed when the tag was re-pushed.
 This is the core value of Cosign. The signature is now invalid and any Kyverno policy enforcing verification will block this image.
-
-**2. Verify with the wrong public key**
-Generate a second key pair: `cosign generate-key-pair` → saves as `cosign2.key` / `cosign2.pub`
-Verify the image using `cosign2.pub` instead of `cosign.pub`:
-```bash
-cosign verify --key cosign2.pub nexus:8082/sample-app:42
-```
-Observe: `no matching signatures` error. The signature exists in the registry but was not made by the key you are verifying against.
-
-**3. Try to deploy an unsigned image with the Kyverno verify policy active**
-Push an image to Nexus without running the Cosign sign stage.
-Apply the `verify-image-signature` ClusterPolicy (from `08_Kyverno_Policies`).
-Try to deploy a pod using the unsigned image:
-```bash
-kubectl apply -f k8s/deployment.yaml
-```
-Observe: admission rejected — Kyverno denies the pod with an error like `image signature verification failed`.
-Fix: run the Cosign sign stage, then redeploy.
 
 ---
 
