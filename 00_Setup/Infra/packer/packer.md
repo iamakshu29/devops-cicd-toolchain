@@ -26,9 +26,9 @@ Running Packer again in the same AWS account and region results in a duplicate A
 
 Common production practice is to use versioned names, for example:
 
-* ansible-controller-20260710-101530
-* ansible-controller-v1.2.0
-* ansible-controller-a4f2c1d (Git commit SHA)
+* jenkins-master-20260710-101530
+* jenkins-master-v1.2.0
+* jenkins-master-a4f2c1d (Git commit SHA)
 
 ---
 
@@ -50,15 +50,15 @@ Therefore:
 
 ## Development / Lab Workflow
 
-A practical workflow for a personal project is:
+A practical workflow for this project is:
 
-1. Build the AMI with Packer.
-2. Deploy infrastructure with Terraform.
-3. Configure managed nodes with Ansible.
+1. Build the AMI with Packer — `install_tools.sh` runs as the shell provisioner and installs JDK 21, Jenkins (systemd service), Docker, Trivy, Checkov, and Cosign directly on the image.
+2. Deploy infrastructure with Terraform — EC2 launches from the AMI, `user_data.sh` starts SonarQube and Nexus via Docker Compose, and starts the Jenkins service.
+3. Access Jenkins at `http://<ec2-public-ip>:8080` — all tools are already on the host, no further configuration step needed.
 4. Destroy infrastructure when finished.
 5. Optionally clean up the AMI and snapshot to avoid accumulating resources.
 
-Another option is to check whether the AMI already exists before running Packer. If it exists and the image hasn't changed, skip the build.
+Another option is to check whether the AMI already exists before running Packer. If it exists and the image hasn't changed, skip the build. The `jenkins_nodes_setup.sh` script already does this by checking `manifest.json`.
 
 ---
 

@@ -130,6 +130,29 @@ cosign sign --key cosign.key --yes registry.example.com/sample-app:@sha256:<DIGE
 ```
 ---
 
+## Getting the Image Digest
+
+Tags are mutable — you can push a new image with the same tag. The digest (`sha256:<hash>`) is the immutable fingerprint of the exact image content. Cosign is deprecating tag-based signing because if the tag is re-pushed after signing, the signature no longer matches. Always sign the digest.
+
+After `docker push` the local daemon knows the digest assigned by the registry:
+
+```bash
+# Returns the full digest reference: nexus:8082/sample-app@sha256:abc123...
+# This is the format cosign sign expects — image name + digest in one string
+docker inspect --format='{{index .RepoDigests 0}}' nexus:8082/sample-app:42
+
+# For Jenkins use it like this
+DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$tag")
+
+# | cut -d'@' -f2 extracts only the hash: sha256:abc123...
+# Use this if you need just the hash to construct the ref yourself
+docker inspect --format='{{index .RepoDigests 0}}' nexus:8082/sample-app:42 | cut -d'@' -f2
+```
+
+This only works **after** the image has been pushed (RepoDigests is empty before push). If the image was just built and pushed in the same pipeline, the digest is available immediately in the same shell session.
+
+---
+
 ## The Jenkinsfile Stage
 
 ```groovy
@@ -139,16 +162,21 @@ stage('Cosign — Sign Image') {
             file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),
             string(credentialsId: 'cosign-key-password', variable: 'COSIGN_PASSWORD')
         ]) {
-            sh """
+            sh '''
+                echo "Getting Digest"
+                DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_NAME}:${IMAGE_TAG}")
+
+                echo "Signing Image"
                 COSIGN_PASSWORD=${COSIGN_PASSWORD} \
-                cosign sign --key ${COSIGN_KEY} --yes ${IMAGE_NAME}:${IMAGE_TAG}
-            """
+                cosign sign --key ${COSIGN_KEY} --yes --allow-insecure-registry ${DIGEST}
+            '''
         }
     }
 }
 ```
 
 **`--yes`** skips the interactive confirmation prompt (required for non-interactive CI environments).
+**`--allow-insecure-registry`** is required when Nexus uses HTTP (not HTTPS).
 
 **The image must already be in the registry** (pushed to Nexus in the previous stage) before you can sign it. Cosign needs to reach the registry to fetch the digest.
 
@@ -395,12 +423,12 @@ pipeline {
                     file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),
                     string(credentialsId: 'cosign-key-password', variable: 'COSIGN_PASSWORD')
                 ]) {
-                    sh """
+                    sh '''
+                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_NAME}:${IMAGE_TAG}")
                         COSIGN_PASSWORD=${COSIGN_PASSWORD} \
                         cosign sign --key ${COSIGN_KEY} --yes \
-                          --allow-insecure-registry \
-                          ${IMAGE_NAME}:${IMAGE_TAG}
-                    """
+                          --allow-insecure-registry ${DIGEST}
+                    '''
                 }
             }
         }

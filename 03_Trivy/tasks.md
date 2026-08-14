@@ -119,6 +119,7 @@ stage('Trivy — Image Scan') {
               --severity HIGH,CRITICAL \
               --ignore-unfixed \
               --format table \
+              --cache-dir /var/cache/trivy \
               ${IMAGE_NAME}:${IMAGE_TAG}
         """
     }
@@ -136,6 +137,7 @@ stage('Trivy — Image Scan') {
               --ignore-unfixed \
               --format json \
               --output trivy-report.json \
+              --cache-dir /var/cache/trivy \
               ${IMAGE_NAME}:${IMAGE_TAG}
         """
     }
@@ -199,11 +201,10 @@ TRIVY_USERNAME=jenkins TRIVY_PASSWORD=yourpass trivy image nexus:8082/sample-app
 
 ### 2. Database download takes very long
 **Cause:** Trivy downloads its vulnerability database from GitHub on first run (and every 12 hours by default)
-**Fix:** Cache the database between builds using a Jenkins workspace cache or a persistent volume:
+**Fix:** Use `--cache-dir /var/cache/trivy` in the pipeline command. The directory is created during AMI build (Packer) and owned by the `jenkins` user, so no sudo is needed at runtime.
 ```bash
-trivy image --cache-dir /opt/trivy-cache ${IMAGE_NAME}:${IMAGE_TAG}
+trivy image --cache-dir /var/cache/trivy ${IMAGE_NAME}:${IMAGE_TAG}
 ```
-Set `/opt/trivy-cache` as a directory that persists across Jenkins builds.
 
 ### 3. Build fails on LOW/MEDIUM vulnerabilities you did not expect
 **Cause:** `--severity` was not set, so Trivy reports and fails on all severity levels including LOW
@@ -363,4 +364,8 @@ A: Use `--exit-code 1` combined with `--severity HIGH,CRITICAL`. Trivy exits wit
 A: Use `--ignore-unfixed` flag — Trivy skips vulnerabilities that have no available fix. Additionally, consider switching to a minimal base image (Alpine or distroless) which has far fewer OS packages and a much smaller attack surface.
 
 **Q: How do you keep Trivy's database up to date in a CI/CD pipeline?**
-A: Trivy auto-downloads its database from GitHub on first run and refreshes it every 12 hours by default. To speed this up across builds, cache the database in a persistent directory (`--cache-dir /opt/trivy-cache`) shared across Jenkins builds rather than downloading it fresh every time.
+A: Trivy auto-downloads its database from GitHub on first run and refreshes it every 12 hours by default. Use `--cache-dir /var/cache/trivy` in your pipeline command. The directory must be pre-created and owned by the jenkins user — if it doesn't exist, Trivy tries to create it ownd directory if --cache-dir flag is mentioned, which requires root, and the pipeline fails with a permission error because jenkins has no sudo access.
+```bash
+sudo mkdir -p /var/cache/trivy
+sudo chown jenkins:jenkins /var/cache/trivy
+```

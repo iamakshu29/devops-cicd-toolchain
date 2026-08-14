@@ -123,40 +123,53 @@ EOF
 }
 
 
-install_jenkins(){
+install_jdk21() {
+    echo "=========================================================================================================================================="
+    echo "Checking for JDK 21"
+    if java -version 2>&1 | grep -q '"21'; then
+        echo "JDK 21 Already Present"
+    else
+        echo "JDK 21 not present, Installing Eclipse Temurin JDK 21"
+        wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
+            | sudo gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] \
+            https://packages.adoptium.net/artifactory/deb \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") main" \
+            | sudo tee /etc/apt/sources.list.d/adoptium.list
+        sudo apt update -y
+        sudo apt install -y temurin-21-jdk
+    fi
+
+    echo "------------------------------------------------------------------------------------------------------------------------------"
+    java -version
+    javac -version
+}
+
+
+install_jenkins_service() {
     echo "=========================================================================================================================================="
     echo "Checking for Jenkins"
-    if sudo docker container inspect jenkins >/dev/null 2>&1; then
-        echo "------------------------------------------------------------------------------------------------------------------------------"
+    if command -v jenkins >/dev/null 2>&1; then
         echo "Jenkins Already Present"
-        echo "Check if Jenkins is running"
-
-        if sudo docker container inspect -f '{{.State.Running}}' jenkins 2>/dev/null | grep -q true; then
-            echo "---------------------------------------------------------------------------------------------------------------------------"
-            echo "Jenkins is Running"
-        else
-            echo "Jenkins exists but is not running"
-            sudo docker start jenkins
-        fi
-
     else
-
-        echo "Image not present, Building One"
-        sudo docker pull jenkins/jenkins:lts-jdk21
-
-        echo "--------------------------------------------------------------------------------------------------------------------------------"
-        echo "Creating Volume to persist data"
-        sudo docker volume create jenkins_home
-
-        echo "--------------------------------------------------------------------------------------------------------------------------------"
-        echo "Starting the Jenkins Container"
-        # Docker socket mount required — pipeline stages run docker build/push on the host daemon
-        sudo docker run -d --name jenkins --restart unless-stopped \
-            -p 8080:8080 -p 50000:50000 \
-            -v jenkins_home:/var/jenkins_home \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            jenkins/jenkins:lts-jdk21
+        echo "Jenkins not present, Installing Jenkins as a host systemd service"
+        sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+            https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+        echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+            https://pkg.jenkins.io/debian-stable binary/" \
+            | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+        sudo apt update -y
+        sudo apt install -y jenkins
+        sudo systemctl enable jenkins
+        sudo systemctl start jenkins
     fi
+
+    # Pipeline docker stages need the jenkins user in the docker group to run docker commands without sudo
+    sudo usermod -aG docker jenkins
+
+    # Shared trivy DB cache across all pipeline runs — jenkins user needs write access
+    sudo mkdir -p /var/cache/trivy
+    sudo chown jenkins:jenkins /var/cache/trivy
 }
 
 
@@ -221,6 +234,14 @@ verify_installations() {
     git --version
 
     echo "---------------------------------------------------------------------------------------------------------------------------------"
+    echo "Java version"
+    java -version
+
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
+    echo "Javac version"
+    javac -version
+
+    echo "---------------------------------------------------------------------------------------------------------------------------------"
     echo "AWS CLI version"
     aws --version
 
@@ -250,7 +271,8 @@ install_base_packages
 install_git
 install_aws_cli
 install_docker_and_docker_compose
-install_jenkins
+install_jdk21
+install_jenkins_service
 install_trivy
 install_checkov
 install_cosign

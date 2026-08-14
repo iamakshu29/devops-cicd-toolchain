@@ -10,8 +10,11 @@ echo "fs.file-max=131072" | sudo tee -a /etc/sysctl.conf
 sysctl -w vm.max_map_count=524288
 sysctl -w fs.file-max=131072
 
+# Jenkins runs as a host systemd service (installed by Packer AMI) — auto-starts on boot
+# Explicit start here as a safety net in case the service did not start during first boot
+systemctl start jenkins || true
+
 # Start SonarQube + Nexus via Docker Compose
-# Jenkins is already running (started by Packer AMI)
 mkdir -p /home/ubuntu/cicd
 cat > /home/ubuntu/cicd/docker-compose.yml <<'EOF'
 version: "3.8"
