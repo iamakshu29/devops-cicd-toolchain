@@ -41,8 +41,9 @@ Every tool's tasks.md includes an **"Alternative commands for Python/Node"** not
 06_Vault/                    → Secrets management in K8s. Requires K8s cluster.
 07_Cosign/                   → Signs container images. Binary tool, no server.
 08_Kyverno_Policies/         → K8s admission policies via manifests. Applied through ArgoCD.
-09_Notifications/             → Slack/Teams webhook. Post block in Jenkinsfile.
-10_Full_Pipeline_Project/    → Complete wired pipeline: app + Jenkinsfile + ArgoCD + all tools.
+09_ArgoCD/                   → GitOps CD. Jenkins commits image tag, ArgoCD syncs cluster.
+10_Notifications/            → Slack/Teams webhook. Post block in Jenkinsfile.
+11_Full_Pipeline_Project/    → Complete wired pipeline: app + Jenkinsfile + ArgoCD + all tools.
 ```
 
 ---
@@ -61,10 +62,11 @@ After 05:      ... → Trivy Scan → Push to Nexus
 After 06:      Vault integration is runtime (K8s pod annotation), not a pipeline stage
 After 07:      ... → Push to Nexus → Cosign Sign Image
 After 08:      Kyverno policies are applied to the cluster via ArgoCD, not a pipeline stage
-After 09:      post { success { slack } failure { slack } }
+After 09:      ... → Cosign Sign Image → Update GitOps Repo (ArgoCD detects commit and deploys)
+After 10:      post { success { slack } failure { slack } }
 ```
 
-Final pipeline has **8 active stages** + post block.
+Final pipeline has **9 active stages** + post block.
 
 ---
 
@@ -96,8 +98,8 @@ Tools that are just CLIs (installed on Jenkins agent):
 1. 00_Setup/00-Setup.md                 → Read first. Provision your environment before anything else.
 2. Pipeline-Architecture-Reference.md   → Read once to understand the full picture.
 3. 01_SonarQube/tasks.md                → Set up SonarQube, run the stage, verify it works.
-4. 02 → 09 (one at a time)              → Add each tool's stage, verify before moving on.
-5. 10_Full_Pipeline_Project/tasks.md    → Only after all tools work individually.
+4. 02 → 10 (one at a time)             → Add each tool's stage, verify before moving on.
+5. 11_Full_Pipeline_Project/tasks.md   → Only after all tools work individually.
 ```
 
 ---

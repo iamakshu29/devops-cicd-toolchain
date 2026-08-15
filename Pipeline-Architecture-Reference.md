@@ -87,6 +87,7 @@ Developer pushes code to GitHub
 | Trivy | After Docker build | Does the container image have OS or library vulnerabilities? |
 | Nexus | After scan passes | Central registry to store and version your Docker images |
 | Cosign | After push | Cryptographic proof that this image came from this pipeline and was not tampered with |
+| ArgoCD | After GitOps commit | Detects the new image tag in Git and syncs the cluster to deploy it |
 | Vault | Runtime (K8s pod) | Injects DB passwords, API keys into pods — secrets never in Git or K8s Secret YAML |
 | Kyverno | K8s admission time | Policy enforcement — rejects pods that violate cluster-wide rules |
 | Notifications | post block | Tells your team whether the build passed or failed |
@@ -177,14 +178,17 @@ This is a common confusion: `localhost` from inside a Jenkins container refers t
 ## What ArgoCD Does in This Pipeline
 
 ArgoCD watches your GitOps repo (a separate repo from your app code).
-Your Jenkins pipeline updates the image tag in that GitOps repo (Stage 11 above).
+Your Jenkins pipeline updates the image tag in that GitOps repo (Stage: Update GitOps Repo).
 ArgoCD detects the commit, syncs the cluster, and deploys the new image.
 
 This is the **separation of concerns**:
-- Jenkins owns CI (build, test, scan, push)
+- Jenkins owns CI (build, test, scan, push, sign)
 - ArgoCD owns CD (deploy to K8s, drift detection, rollback)
 
-ArgoCD is covered in the ArgoCD section (Step 1 in context.md). This pipeline assumes ArgoCD is already running.
+**Pull-based vs push-based CD:**
+Jenkins never touches `kubectl` directly. ArgoCD (running inside the cluster) pulls from Git — the build server never needs cluster-admin credentials. This is more secure and is the standard GitOps model.
+
+ArgoCD is covered in depth in `09_ArgoCD/tasks.md`.
 
 ---
 
@@ -285,8 +289,14 @@ pipeline {
         stage('Cosign — Sign Image') {
             steps {
                 withCredentials([file(credentialsId: 'cosign-private-key',
-                                      variable: 'COSIGN_KEY')]) {
-                    sh "cosign sign --key ${COSIGN_KEY} ${IMAGE_NAME}:${IMAGE_TAG}"
+                                      variable: 'COSIGN_KEY'),
+                                 string(credentialsId: 'cosign-key-password',
+                                        variable: 'COSIGN_PASSWORD')]) {
+                    sh '''
+                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_NAME}:${IMAGE_TAG}")
+                        COSIGN_PASSWORD=${COSIGN_PASSWORD} \
+                        cosign sign --key ${COSIGN_KEY} --yes --allow-insecure-registry ${DIGEST}
+                    '''
                 }
             }
         }
