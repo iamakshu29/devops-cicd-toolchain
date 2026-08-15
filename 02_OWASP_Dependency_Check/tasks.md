@@ -219,49 +219,6 @@ Pass it to the scan: `--suppression suppression.xml`
 
 ---
 
-## Growing Pipeline Snapshot (After This Tool)
-
-```groovy
-pipeline {
-    agent any
-    environment {
-        SONAR_PROJECT = 'sample-app'
-    }
-    stages {
-        stage('Checkout') {
-            steps { git branch: 'main', url: 'https://github.com/your-org/sample-app.git' }
-        }
-        stage('Build') {
-            steps { sh 'mvn clean package -DskipTests' }
-        }
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT}"
-                }
-            }
-        }
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        stage('OWASP Dependency Check') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --format XML --format HTML',
-                                odcInstallation: 'Dependency-Check'
-                dependencyCheckPublisher pattern: 'dependency-check-report.xml',
-                                         failedTotalCritical: 1
-            }
-        }
-    }
-}
-```
-
----
-
 ## Interview Questions
 
 **Q: What is the difference between OWASP Dependency Check and Trivy?**
