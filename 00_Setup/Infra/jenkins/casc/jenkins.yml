@@ -1,10 +1,7 @@
 jenkins:
   systemMessage: "Jenkins configured using JCasC"
-
-  numExecutors: 0
-
+  numExecutors: 1
   mode: NORMAL
-
   disableRememberMe: false
 
   securityRealm:
@@ -23,19 +20,19 @@ jenkins:
 
 unclassified:
   location:
-    url: "http://localhost:8080/"
+    url: "${JENKINS_URL}"
 
   sonarGlobalConfiguration:
     installations:
       - name: "SonarQube"
-        serverUrl: "http://sonarqube:9000"
+        serverUrl: "http://localhost:9000"
         credentialsId: "sonarqube-token"
   
 tool:
   jdk:
     installations:
       - name: "JDK-21"
-        home: "/usr/lib/jvm/java-21-openjdk-amd64"
+        home: "/usr/lib/jvm/temurin-21-jdk-amd64"
 
   maven:
     installations:
@@ -71,3 +68,17 @@ credentials:
               id: "nvd-api-key"
               secret: "${NVD_API_KEY}"
               description: "NVD API Key"
+              
+          - usernamePassword:
+              scope: GLOBAL
+              id: "dockerhub-creds"
+              username: "${DOCKERHUB_USERNAME}"
+              password: "${DOCKERHUB_TOKEN}"
+              description: "Docker Hub credentials"
+
+# nexus-credentials    -> needed only for Nexus push
+# github-credentials   -> needed only for private Git or GitOps push
+# cosign-private-key   -> needed only for Cosign signing
+# cosign-key-password  -> needed only for encrypted Cosign key
+# slack-webhook        -> needed only when Slack notifications are enabled
+# teams-webhook        -> needed only when Teams notifications are enabled

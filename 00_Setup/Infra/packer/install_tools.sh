@@ -161,7 +161,6 @@ install_jenkins_service() {
         sudo apt update -y
         sudo apt install -y jenkins
         sudo systemctl enable jenkins
-        sudo systemctl start jenkins
     fi
 
     # Pipeline docker stages need the jenkins user in the docker group to run docker commands without sudo

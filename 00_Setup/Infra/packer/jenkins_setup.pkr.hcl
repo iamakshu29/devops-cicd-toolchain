@@ -40,6 +40,18 @@ build {
     script = "${path.root}/install_tools.sh"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/../jenkins"
+    destination = "/tmp/jenkins-config"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo /tmp/jenkins-config/install_casc.sh",
+      "sudo rm -rf /tmp/jenkins-config"
+    ]
+  }
+
    post-processor "manifest" {
     output = "manifest.json"
   }

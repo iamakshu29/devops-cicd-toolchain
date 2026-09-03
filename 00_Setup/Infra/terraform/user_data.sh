@@ -10,9 +10,12 @@ echo "fs.file-max=131072" | sudo tee -a /etc/sysctl.conf
 sysctl -w vm.max_map_count=524288
 sysctl -w fs.file-max=131072
 
-# Jenkins runs as a host systemd service (installed by Packer AMI) — auto-starts on boot
-# Explicit start here as a safety net in case the service did not start during first boot
-systemctl start jenkins || true
+# Jenkins requires the manually supplied secrets file before CasC can start it.
+if [[ -f /etc/jenkins/jenkins-secrets.env ]]; then
+  systemctl start jenkins
+else
+  echo "Jenkins is not started: /etc/jenkins/jenkins-secrets.env is missing."
+fi
 
 # Start SonarQube + Nexus via Docker Compose
 mkdir -p /home/ubuntu/cicd
