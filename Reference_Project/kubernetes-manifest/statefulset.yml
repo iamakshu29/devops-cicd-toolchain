@@ -61,7 +61,7 @@ spec:
       name: db-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: standard
+      storageClassName: gp3 # standard (for KIND)
       resources:
         requests:
           storage: 1Gi
