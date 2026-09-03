@@ -1,0 +1,167 @@
+pipeline {
+    agent any
+
+    tools {
+        // must match name in Manage Jenkins → Tools → Maven installations
+        maven 'maven'
+    }
+
+    environment {
+        NEXUS_REGISTRY  = 'nexus:8082'
+        IMAGE_NAME      = 'petclinic-app'
+        IMAGE_TAG       = "${env.BUILD_NUMBER}"
+        SONAR_PROJECT   = 'sample-app'
+        GITOPS_REPO     = 'https://github.com/your-org/gitops-repo.git'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/iamakshu29/devops-cicd-toolchain.git'
+            }
+        }
+
+        stage('Checkov — IaC Scan') {
+            steps {
+                sh '''
+                    checkov -d 00_Setup/Infra/terraform/ \
+                    --framework terraform \
+                    --compact --quiet \
+                    --output json --output-file-path ./reports/ \
+                    --soft-fail
+                '''
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh '''
+                    cd spring-petclinic/
+                    mvn clean verify -DskipTests
+                '''
+            }
+        }
+
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         withSonarQubeEnv('SonarQube') {
+        //             // fully qualified plugin — avoids "No plugin found for prefix 'sonar'" on restricted agents
+        //             sh "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=${SONAR_PROJECT}"
+        //         }
+        //     }
+        // }
+
+        // stage('Quality Gate') {
+        //     steps {
+        //         timeout(time: 5, unit: 'MINUTES') {
+        //             waitForQualityGate abortPipeline: true
+        //         }
+        //     }
+        // }
+
+        stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --format XML --format HTML',
+                odcInstallation: 'Dependency-Check'
+                dependencyCheckPublisher pattern: 'dependency-check-report.xml', failedTotalCritical: 1
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+            }
+        }
+
+        stage('Trivy — Image Scan') {
+            steps {
+                sh """
+                    trivy image \
+                      --exit-code 1 \
+                      --severity HIGH,CRITICAL \
+                      --ignore-unfixed \
+                      --format table \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                """
+            }
+            post {
+                always {
+                    sh """
+                        trivy image \
+                          --exit-code 0 \
+                          --format json \
+                          --output trivy-report.json \
+                          ${IMAGE_NAME}:${IMAGE_TAG}
+                    """
+                    archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true
+                }
+            }
+        }
+
+        // stage('Push to Nexus') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry("http://${NEXUS_REGISTRY}", 'nexus-credentials') {
+        //                 docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
+        //                 docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Cosign — Sign Image') {
+        //     steps {
+        //         withCredentials([
+        //             file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),
+        //             string(credentialsId: 'cosign-key-password', variable: 'COSIGN_PASSWORD')
+        //         ]) {
+        //             sh """
+        //                 COSIGN_PASSWORD=${COSIGN_PASSWORD} \
+        //                 cosign sign --key ${COSIGN_KEY} --yes \
+        //                   --allow-insecure-registry \
+        //                   ${IMAGE_NAME}:${IMAGE_TAG}
+        //             """
+        //         }
+        //     }
+        // }
+
+    //     stage('Update GitOps Repo') {
+    //         steps {
+    //             withCredentials([usernamePassword(credentialsId: 'github-credentials',
+    //                                                usernameVariable: 'GIT_USER',
+    //                                                passwordVariable: 'GIT_TOKEN')]) {
+    //                 sh """
+    //                     rm -rf gitops-repo
+    //                     git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/your-org/gitops-repo.git
+    //                     cd gitops-repo
+    //                     sed -i 's|image: nexus:8082/sample-app:.*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/deployment.yaml
+    //                     git config user.email "jenkins@ci.local"
+    //                     git config user.name "Jenkins"
+    //                     git diff --quiet || git commit -am "ci: update image to ${IMAGE_TAG}"
+    //                     git push
+    //                 """
+    //                                                }
+    //         }
+    //     }
+    // }
+
+    // post {
+    //     regression {
+    //         slackSend channel: '#deployments', color: 'danger',
+    //                   message: "NEWLY BROKEN: ${env.JOB_NAME} #${env.BUILD_NUMBER} | <${env.BUILD_URL}|View>"
+    //     }
+    //     fixed {
+    //         slackSend channel: '#deployments', color: 'good',
+    //                   message: "FIXED: ${env.JOB_NAME} #${env.BUILD_NUMBER} | <${env.BUILD_URL}|View>"
+    //     }
+    //     failure {
+    //         slackSend channel: '#deployments', color: 'danger',
+    //                   message: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} | <${env.BUILD_URL}|View>"
+    //     }
+    //     always {
+    //         cleanWs()   // clean workspace after each build
+    //     }
+    // }
+    }
+}
