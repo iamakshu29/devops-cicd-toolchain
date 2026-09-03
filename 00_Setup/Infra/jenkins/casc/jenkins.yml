@@ -1,0 +1,73 @@
+jenkins:
+  systemMessage: "Jenkins configured using JCasC"
+
+  numExecutors: 0
+
+  mode: NORMAL
+
+  disableRememberMe: false
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+        
+        - id: "iamakshu"
+          password: "${JENKINS_USER1_PASSWORD}"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+
+  sonarGlobalConfiguration:
+    installations:
+      - name: "SonarQube"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: "sonarqube-token"
+  
+tool:
+  jdk:
+    installations:
+      - name: "JDK-21"
+        home: "/usr/lib/jvm/java-21-openjdk-amd64"
+
+  maven:
+    installations:
+      - name: "maven"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.9.11"
+
+  dependencyCheck:
+    installations:
+      - name: "Dependency-Check"
+        properties:
+          - installSource:
+              installers:
+                - owasp:
+                    id: "5.6.4"
+        
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - string:
+              scope: GLOBAL
+              id: "sonarqube-token"
+              secret: "${SONARQUBE_TOKEN}"
+              description: "SonarQube Project Analysis Token"
+
+          - string:
+              scope: GLOBAL
+              id: "nvd-api-key"
+              secret: "${NVD_API_KEY}"
+              description: "NVD API Key"
