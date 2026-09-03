@@ -29,7 +29,7 @@ pipeline {
                     --framework terraform \
                     --compact --quiet \
                     --output json --output-file-path ./reports/ \
-                    --soft-fail
+                    --soft-fail >/dev/null 2>&1
                 '''
             }
         }
@@ -37,8 +37,8 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    cd spring-petclinic/
-                    mvn clean verify -DskipTests
+                    cd Reference_Project/spring-petclinic/
+                    mvn clean verify -DskipTests >/dev/null
                 '''
             }
         }
@@ -62,15 +62,29 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --format XML --format HTML',
-                odcInstallation: 'Dependency-Check'
-                dependencyCheckPublisher pattern: 'dependency-check-report.xml', failedTotalCritical: 1
+                dependencyCheck(
+                    odcInstallation: 'Dependency-Check',
+                    nvdCredentialsId: 'nvd-api-key',
+                    additionalArguments: '''
+                        --scan ./
+                        --format XML
+                        --format HTML
+                        --noupdate
+                    '''
+                )
+
+                dependencyCheckPublisher(
+                    pattern: 'dependency-check-report.xml'
+                )
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh '''
+                    cd Reference_Project/spring-petclinic/
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 

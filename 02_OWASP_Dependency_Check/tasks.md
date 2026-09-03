@@ -12,7 +12,7 @@ OWASP Dependency Check scans your project's **dependency manifest** (pom.xml, re
 **Difference from Trivy (important for interviews):**
 
 | Tool     | What it scans                                          | When it runs                     |
-| ----------| --------------------------------------------------------| ----------------------------------|
+| -------- | ------------------------------------------------------ | -------------------------------- |
 | OWASP DC | App library dependencies (source-level)                | After build, before Docker build |
 | Trivy    | Container image (OS packages + libraries in the image) | After Docker build               |
 
@@ -67,11 +67,13 @@ Since 2023, NVD rate-limits unauthenticated downloads significantly. Without an 
 ## Jenkins Integration
 
 ### Step 1 — Install the Plugin
+
 1. **Manage Jenkins** → **Plugins** → **Available plugins**
 2. Search: `OWASP Dependency-Check`
 3. Install (requires Jenkins restart)
 
 ### Step 2 — Configure the Tool
+
 1. **Manage Jenkins** → **Tools** → scroll to **Dependency-Check**
 2. Click **Add Dependency-Check**
    - Name: `Dependency-Check` ← referenced in Jenkinsfile's `odcInstallation` parameter
@@ -80,7 +82,9 @@ Since 2023, NVD rate-limits unauthenticated downloads significantly. Without an 
 3. Apply & Save
 
 ### Step 3 — (Optional) Add NVD API Key
+
 If you have an NVD API key, add it as a Jenkins credential:
+
 1. **Manage Jenkins** → **Credentials** → **System** → **Global credentials**
 2. Add credential:
    - Kind: **Secret text**
@@ -111,23 +115,29 @@ stage('OWASP Dependency Check') {
 ```
 
 **With NVD API key (avoids rate limiting):**
+
 ```groovy
 stage('OWASP Dependency Check') {
     steps {
-        withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_KEY')]) {
-            dependencyCheck additionalArguments: """
+        dependencyCheck(
+            odcInstallation: 'Dependency-Check',
+            nvdCredentialsId: 'nvd-api-key',
+            additionalArguments: '''
                 --scan ./
                 --format XML
                 --format HTML
-                --nvdApiKey ${NVD_KEY}
-            """, odcInstallation: 'Dependency-Check'
-        }
-        dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+            '''
+        )
+
+        dependencyCheckPublisher(
+            pattern: 'dependency-check-report.xml'
+        )
     }
 }
 ```
 
 **To fail the build on HIGH or CRITICAL findings:**
+
 ```groovy
 dependencyCheckPublisher pattern: 'dependency-check-report.xml',
                          failedTotalCritical: 1,    // fail if any Critical CVE found
@@ -137,12 +147,14 @@ dependencyCheckPublisher pattern: 'dependency-check-report.xml',
 ### Alternative for Python
 
 OWASP DC has limited Python support. Use `safety` or `pip-audit` instead, which are more accurate for Python:
+
 ```bash
 pip install pip-audit
 pip-audit -r requirements.txt --format json -o pip-audit-report.json
 ```
 
 Or use OWASP DC with Python requirements file:
+
 ```bash
 dependencyCheck additionalArguments: '--scan requirements.txt --enableExperimental', odcInstallation: 'Dependency-Check'
 ```
@@ -158,6 +170,7 @@ dependencyCheck additionalArguments: '--scan package-lock.json --nodePackageSkip
 ## Verification
 
 After the pipeline runs:
+
 1. Open the Jenkins job page — you should see a **Dependency-Check Trend** graph
 2. Click the trend graph or the **Dependency Check** link in the left sidebar for the full report
 3. The report shows each vulnerable library with CVE ID, severity, and a link to the CVE details
@@ -169,24 +182,29 @@ In your project workspace: `dependency-check-report.html` opens in a browser and
 ## Common Errors + Debugging
 
 ### 1. First run takes 30+ minutes
+
 **Cause:** Downloading the NVD database (~500MB) for the first time. NVD rate-limits unauthenticated downloads since 2023 — without an API key, it downloads in small batches.
 **Fix:** Get a free NVD API key and pass it via `--nvdApiKey`. The download then completes in under 5 minutes.
 
 ### 2. `ERROR: Unable to connect to the NVD`
+
 **Cause:** Jenkins agent has no internet access, or firewall blocks NIST's CDN.
 **Fix:** Either open the firewall or use OWASP DC in offline mode with a pre-downloaded database. In offline mode: `--noupdate` flag uses whatever database copy exists.
 
 ### 3. Report is empty / no vulnerabilities found
+
 **Cause 1:** Scan path is wrong — `--scan ./` scans from the workspace root; if your pom.xml is in a subdirectory, adjust the path.
 **Cause 2:** OWASP DC could not resolve transitive dependencies — run `mvn dependency:resolve` first to ensure all JARs are in the local Maven cache.
 **Cause 3:** Using `--scan` on a Python project without `--enableExperimental` — Python support is experimental.
 
 ### 4. `dependencyCheckPublisher` fails — file not found
+
 **Error:** `dependency-check-report.xml was not found`
 **Cause:** The `dependencyCheck` step did not generate the XML format — only HTML was specified, or the step failed before generating output.
 **Fix:** Always include `--format XML` in `additionalArguments`. You can include multiple formats: `--format XML --format HTML`.
 
 ### 5. Build marked UNSTABLE instead of FAILED on high-severity findings
+
 **Cause:** Default `dependencyCheckPublisher` marks builds unstable, not failed. This is intentional — it lets you see the report without blocking the pipeline immediately.
 **Fix:** Use `failedTotalCritical` and `failedTotalHigh` thresholds in `dependencyCheckPublisher` to control when builds fail vs go unstable.
 
@@ -203,9 +221,11 @@ Fix: always include `--format XML`.
 ---
 
 **Notes (read after deciding):**
+
 - Test-scope dependencies that do not appear in the production artifact are genuinely lower risk — but most security teams still require tracking them. Use `--suppression` with a justification rather than ignoring.
 - For "no fix available" findings, OWASP DC supports a `suppression.xml` file where you document the accepted risk with a CVE ID and expiry date.
 - Suppression file format:
+
 ```xml
 <suppressions>
   <suppress>
@@ -215,6 +235,7 @@ Fix: always include `--format XML`.
   </suppress>
 </suppressions>
 ```
+
 Pass it to the scan: `--suppression suppression.xml`
 
 ---
