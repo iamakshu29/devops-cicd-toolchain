@@ -6,6 +6,6 @@
 crash.log
 .terraform.lock.hcl
 manifest.json.lock
-*.pem
+# *.pem
 # terraform.tfvars
 # terraform.tfvars.json
