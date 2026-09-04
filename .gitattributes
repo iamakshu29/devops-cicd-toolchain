@@ -1,0 +1,25 @@
+# Normalize line endings: always LF on checkout, regardless of OS
+* text=auto
+
+# Shell scripts — must be LF or Linux will break
+*.sh text eol=lf
+
+# Terraform / Packer
+*.hcl text eol=lf
+*.tf  text eol=lf
+
+# Config / Data files
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.env  text eol=lf
+*.conf text eol=lf
+*.toml text eol=lf
+
+# Markdown / Docs
+*.md  text eol=lf
+
+# Windows-specific files — keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
