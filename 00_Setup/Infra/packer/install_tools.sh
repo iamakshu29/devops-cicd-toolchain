@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 ###############################################################################
 # Script Name : install_tools.sh
@@ -33,7 +33,7 @@ install_base_packages() {
     # wget and curl are required by install_trivy and install_cosign
     sudo apt install -y wget curl unzip
 
-    # SonarQube + Elasticsearch requirement — persisted in AMI so all instances inherit it
+    # SonarQube + Elasticsearch requirement â€” persisted in AMI so all instances inherit it
     echo "vm.max_map_count=524288" | sudo tee -a /etc/sysctl.conf
     echo "fs.file-max=131072" | sudo tee -a /etc/sysctl.conf
     sudo sysctl -w vm.max_map_count=524288
@@ -185,7 +185,7 @@ install_jenkins_service() {
     # Pipeline docker stages need the jenkins user in the docker group to run docker commands without sudo
     sudo usermod -aG docker jenkins
 
-    # Shared trivy DB cache across all pipeline runs — jenkins user needs write access
+    # Shared trivy DB cache across all pipeline runs â€” jenkins user needs write access
     sudo mkdir -p /var/cache/trivy
     sudo chown jenkins:jenkins /var/cache/trivy
 }

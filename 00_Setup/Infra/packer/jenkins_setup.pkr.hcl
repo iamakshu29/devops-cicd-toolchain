@@ -40,14 +40,18 @@ build {
     script = "${path.root}/install_tools.sh"
   }
 
+  provisioner "shell" {
+    inline = ["mkdir -p /tmp/jenkins-config"]
+  }
+
   provisioner "file" {
-    source      = "${path.root}/../jenkins"
-    destination = "/tmp/jenkins-config"
+    source      = "${path.root}/../jenkins/"
+    destination = "/tmp/jenkins-config/"
   }
 
   provisioner "shell" {
     inline = [
-      "sudo bash -x /tmp/jenkins-config/install_casc.sh",
+      "sudo bash /tmp/jenkins-config/install_casc.sh",
       "sudo rm -rf /tmp/jenkins-config"
     ]
   }
