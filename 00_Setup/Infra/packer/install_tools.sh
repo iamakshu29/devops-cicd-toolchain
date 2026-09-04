@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 ###############################################################################
 # Script Name : install_tools.sh
@@ -199,14 +199,24 @@ install_trivy(){
     else
         echo "---------------------------------------------------------------------------------------------------------------------------------"
         echo "Installing Trivy"
+
+        # Install jq if not present (needed for reliable JSON parsing)
+        if ! command -v jq >/dev/null 2>&1; then
+            sudo apt install -y jq
+        fi
+
         TRIVY_VERSION=$(curl --fail --silent --show-error --location \
             --retry 5 --retry-all-errors --retry-delay 5 \
             https://api.github.com/repos/aquasecurity/trivy/releases/latest \
-            | grep '"tag_name"' | cut -d '"' -f 4 | sed 's/^v//')
-        if [ -z "$TRIVY_VERSION" ]; then
-            echo "Unable to determine the latest Trivy version" >&2
+            | jq -r '.tag_name' | sed 's/^v//')
+
+        # Guard: ensure we got a valid semver string (e.g. "0.58.1"), not a URL or error message
+        if [ -z "$TRIVY_VERSION" ] || ! echo "$TRIVY_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Unable to determine the latest Trivy version (got: '${TRIVY_VERSION}')" >&2
             exit 1
         fi
+
+        echo "Installing Trivy version: ${TRIVY_VERSION}"
         download_file \
             "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb" \
             /tmp/trivy.deb
