@@ -12,7 +12,19 @@
 # Requirements: 
 ###############################################################################
 
-set -euo pipefail
+set -Eeuo pipefail
+
+trap 'status=$?; echo "ERROR: command failed with status ${status} at line ${LINENO}: ${BASH_COMMAND}" >&2' ERR
+
+download_file() {
+    local url=$1
+    local destination=$2
+
+    echo "Downloading ${url}"
+    curl --fail --silent --show-error --location \
+        --retry 5 --retry-all-errors --retry-delay 5 \
+        "$url" -o "$destination"
+}
 
 install_base_packages() {
     echo "=========================================================================================================================================="
@@ -48,7 +60,9 @@ install_aws_cli() {
         echo "AWS CLI Already Present"
     else
         echo "AWS CLI not present, Installing AWS CLI"
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        download_file \
+            "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+            "awscliv2.zip"
         unzip awscliv2.zip
         sudo ./aws/install
     fi
@@ -82,7 +96,8 @@ install_docker_and_docker_compose() {
 
         sudo install -m 0755 -d /etc/apt/keyrings
 
-        sudo curl -fsSL \
+        sudo curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 5 \
             https://download.docker.com/linux/ubuntu/gpg \
             -o /etc/apt/keyrings/docker.asc
 
@@ -130,7 +145,9 @@ install_jdk21() {
         echo "JDK 21 Already Present"
     else
         echo "JDK 21 not present, Installing Eclipse Temurin JDK 21"
-        wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
+        curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            https://packages.adoptium.net/artifactory/api/gpg/key/public \
             | sudo gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg
         echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] \
             https://packages.adoptium.net/artifactory/deb \
@@ -153,8 +170,10 @@ install_jenkins_service() {
         echo "Jenkins Already Present"
     else
         echo "Jenkins not present, Installing Jenkins as a host systemd service"
-        sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
-            https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+        sudo curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key \
+            -o /usr/share/keyrings/jenkins-keyring.asc
         echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
             https://pkg.jenkins.io/debian-stable binary/" \
             | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
@@ -180,10 +199,17 @@ install_trivy(){
     else
         echo "---------------------------------------------------------------------------------------------------------------------------------"
         echo "Installing Trivy"
-        TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest \
-            | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
-        wget "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb" \
-            -O /tmp/trivy.deb
+        TRIVY_VERSION=$(curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            https://api.github.com/repos/aquasecurity/trivy/releases/latest \
+            | grep '"tag_name"' | cut -d '"' -f 4 | sed 's/^v//')
+        if [ -z "$TRIVY_VERSION" ]; then
+            echo "Unable to determine the latest Trivy version" >&2
+            exit 1
+        fi
+        download_file \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb" \
+            /tmp/trivy.deb
         sudo dpkg -i /tmp/trivy.deb
         rm /tmp/trivy.deb
     fi
@@ -214,9 +240,17 @@ install_cosign() {
     else
         echo "---------------------------------------------------------------------------------------------------------------------------------"
         echo "Installing Cosign"
-        COSIGN_VERSION=$(curl -s https://api.github.com/repos/sigstore/cosign/releases/latest \
-            | grep tag_name | cut -d '"' -f 4)
-        curl -Lo /tmp/cosign \
+        COSIGN_VERSION=$(curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            https://api.github.com/repos/sigstore/cosign/releases/latest \
+            | grep '"tag_name"' | cut -d '"' -f 4)
+        if [ -z "$COSIGN_VERSION" ]; then
+            echo "Unable to determine the latest Cosign version" >&2
+            exit 1
+        fi
+        curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            -o /tmp/cosign \
             "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
         chmod +x /tmp/cosign
         sudo mv /tmp/cosign /usr/local/bin/cosign
