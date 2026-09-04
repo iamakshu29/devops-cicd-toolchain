@@ -47,7 +47,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo /tmp/jenkins-config/install_casc.sh",
+      "sudo bash -x /tmp/jenkins-config/install_casc.sh",
       "sudo rm -rf /tmp/jenkins-config"
     ]
   }

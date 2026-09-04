@@ -13,9 +13,25 @@ sudo chown -R jenkins:jenkins "$JENKINS_CASC_DIR"
 sudo chmod 600 "$JENKINS_CASC_DIR/jenkins.yml"
 
 if command -v jenkins-plugin-cli >/dev/null 2>&1; then
-    sudo jenkins-plugin-cli --plugin-file "$JENKINS_CONFIG_DIR/plugins.txt"
+    echo "Installing Jenkins plugins from $JENKINS_CONFIG_DIR/plugins.txt"
+    plugin_install_succeeded=false
+    for attempt in 1 2 3 4 5; do
+        if sudo jenkins-plugin-cli \
+            --plugin-file "$JENKINS_CONFIG_DIR/plugins.txt" \
+            --verbose; then
+            plugin_install_succeeded=true
+            break
+        fi
+        echo "Jenkins plugin installation attempt ${attempt} failed; retrying" >&2
+        sleep 10
+    done
+    if [ "$plugin_install_succeeded" != true ]; then
+        echo "Jenkins plugin installation failed after 5 attempts" >&2
+        exit 1
+    fi
 else
     echo "jenkins-plugin-cli is not available"
+    echo "Install Jenkins successfully before running install_casc.sh" >&2
     exit 1
 fi
 
