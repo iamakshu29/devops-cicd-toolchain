@@ -21,7 +21,7 @@ if [[ "${2:-}" == "--delete-ami" ]]; then
 fi
 
 if [[ -z "$ACTION" ]]; then
-    read -rp "What do you want to do? (apply/destroy): " ACTION
+    read -rp "What do you want to do? (apply/destroy/destroy --delete-ami): " ACTION
 fi
 
 echo "=========================================================================================================================================="
@@ -59,7 +59,7 @@ packer init ./packer
 
 echo "=========================================================================================================================================="
 echo "Initializing Terraform..."
-terraform -chdir=./terraform init
+terraform -chdir=./terraform init > /dev/null
 
 case "$ACTION" in
     apply)

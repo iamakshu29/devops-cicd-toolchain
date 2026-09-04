@@ -56,7 +56,7 @@ tool:
 credentials:
   system:
     domainCredentials:
-      - credentials:
+      - credentials: 
           - string:
               scope: GLOBAL
               id: "sonarqube-token"
