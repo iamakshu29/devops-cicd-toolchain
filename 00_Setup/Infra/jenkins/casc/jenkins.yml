@@ -43,16 +43,6 @@ tool:
                 - maven:
                     id: "3.9.11"
 
-  dependencyCheck:
-    installations:
-      - name: "Dependency-Check"
-        properties:
-          - installSource:
-              installers:
-                - owasp:
-                    id: "5.6.4"
-        
-
 credentials:
   system:
     domainCredentials:

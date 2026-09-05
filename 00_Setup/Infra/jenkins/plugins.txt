@@ -11,7 +11,7 @@ credentials-binding
 pipeline-stage-view
 
 sonar
-owasp-dependency-check
+dependency-check-jenkins-plugin
 
 docker-workflow
 
