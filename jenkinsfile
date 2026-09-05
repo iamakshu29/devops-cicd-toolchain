@@ -84,6 +84,7 @@ pipeline {
                 sh '''
                     cd Reference_Project/spring-petclinic/
                     docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
@@ -113,6 +114,25 @@ pipeline {
             }
         }
 
+        stage('Image Push to DockerHub') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    docker push ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push "$DOCKER_USERNAME/${IMAGE_NAME}:${IMAGE_TAG}"
+                    docker logout
+                '''
+                }
+            }
+        }
+
         // stage('Push to Nexus') {
         //     steps {
         //         script {
@@ -124,21 +144,23 @@ pipeline {
         //     }
         // }
 
-        // stage('Cosign — Sign Image') {
-        //     steps {
-        //         withCredentials([
-        //             file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),
-        //             string(credentialsId: 'cosign-key-password', variable: 'COSIGN_PASSWORD')
-        //         ]) {
-        //             sh """
-        //                 COSIGN_PASSWORD=${COSIGN_PASSWORD} \
-        //                 cosign sign --key ${COSIGN_KEY} --yes \
-        //                   --allow-insecure-registry \
-        //                   ${IMAGE_NAME}:${IMAGE_TAG}
-        //             """
-        //         }
-        //     }
-        // }
+        stage('Cosign — Sign Image') {
+            steps {
+                withCredentials([
+                    file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),
+                    string(credentialsId: 'cosign-key-password', variable: 'COSIGN_PASSWORD')
+                ]) {
+                    sh '''
+                        echo "Getting Digest"
+                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_NAME}:${IMAGE_TAG}")
+
+                        echo "Signing Image"
+                        COSIGN_PASSWORD=${COSIGN_PASSWORD} \
+                        cosign sign --key ${COSIGN_KEY} --yes --allow-insecure-registry ${DIGEST}
+                    '''
+                }
+            }
+        }
 
     //     stage('Update GitOps Repo') {
     //         steps {
