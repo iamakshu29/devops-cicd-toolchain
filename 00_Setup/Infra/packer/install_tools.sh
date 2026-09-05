@@ -12,6 +12,11 @@
 # Requirements: 
 ###############################################################################
 
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "ERROR: this script must be run with Bash. Use: bash $0" >&2
+    exit 2
+fi
+
 set -Eeuo pipefail
 
 trap 'status=$?; echo "ERROR: command failed with status ${status} at line ${LINENO}: ${BASH_COMMAND}" >&2' ERR

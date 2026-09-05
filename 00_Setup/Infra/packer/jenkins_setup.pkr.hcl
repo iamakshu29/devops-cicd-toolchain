@@ -37,7 +37,8 @@ build {
   ]
 
   provisioner "shell" {
-    script = "${path.root}/install_tools.sh"
+    script          = "${path.root}/install_tools.sh"
+    execute_command = "sudo bash -x {{ .Path }}"
   }
 
   provisioner "shell" {
@@ -51,7 +52,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo bash /tmp/jenkins-config/install_casc.sh",
+      "sudo bash -x /tmp/jenkins-config/install_casc.sh",
       "sudo rm -rf /tmp/jenkins-config"
     ]
   }
