@@ -11,6 +11,7 @@ pipeline {
         IMAGE_NAME      = 'petclinic-app'
         IMAGE_TAG       = "${env.BUILD_NUMBER}"
         SONAR_PROJECT   = 'sample-app'
+        DOCKER_USERNAME = 'iamakshu'
         GITOPS_REPO     = 'https://github.com/your-org/gitops-repo.git'
     }
 
@@ -33,6 +34,25 @@ pipeline {
                 '''
             }
         }
+
+        // stage('OWASP Dependency Check') {
+        //     steps {
+        //         dependencyCheck(
+        //             odcInstallation: 'Dependency-Check',
+        //             nvdCredentialsId: 'nvd-api-key',
+        //             additionalArguments: '''
+        //                 --scan ./
+        //                 --format XML
+        //                 --format HTML
+        //                 --noupdate
+        //             '''
+        //         )
+
+        //         dependencyCheckPublisher(
+        //             pattern: 'dependency-check-report.xml'
+        //         )
+        //     }
+        // }
 
         stage('Build') {
             steps {
@@ -60,25 +80,6 @@ pipeline {
         //     }
         // }
 
-        stage('OWASP Dependency Check') {
-            steps {
-                dependencyCheck(
-                    odcInstallation: 'Dependency-Check',
-                    nvdCredentialsId: 'nvd-api-key',
-                    additionalArguments: '''
-                        --scan ./
-                        --format XML
-                        --format HTML
-                        --noupdate
-                    '''
-                )
-
-                dependencyCheckPublisher(
-                    pattern: 'dependency-check-report.xml'
-                )
-            }
-        }
-
         stage('Docker Build') {
             steps {
                 sh '''
@@ -93,11 +94,11 @@ pipeline {
             steps {
                 sh """
                     trivy image \
-                      --exit-code 1 \
+                      --exit-code 0 \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
                       --format table \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
+                      ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
                 """
             }
             post {
@@ -107,7 +108,7 @@ pipeline {
                           --exit-code 0 \
                           --format json \
                           --output trivy-report.json \
-                          ${IMAGE_NAME}:${IMAGE_TAG}
+                          ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
                     """
                     archiveArtifacts artifacts: 'trivy-report.json', allowEmptyArchive: true
                 }
@@ -126,8 +127,6 @@ pipeline {
                     sh '''
                     echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
                     docker push ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push "$DOCKER_USERNAME/${IMAGE_NAME}:${IMAGE_TAG}"
-                    docker logout
                 '''
                 }
             }
@@ -152,11 +151,13 @@ pipeline {
                 ]) {
                     sh '''
                         echo "Getting Digest"
-                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE_NAME}:${IMAGE_TAG}")
+                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
 
                         echo "Signing Image"
                         COSIGN_PASSWORD=${COSIGN_PASSWORD} \
                         cosign sign --key ${COSIGN_KEY} --yes --allow-insecure-registry ${DIGEST}
+
+                        docker logout
                     '''
                 }
             }

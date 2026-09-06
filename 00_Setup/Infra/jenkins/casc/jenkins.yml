@@ -66,9 +66,21 @@ credentials:
               password: "${DOCKERHUB_TOKEN}"
               description: "Docker Hub credentials"
 
+          - file:
+              scope: GLOBAL
+              id: "cosign-private-key"
+              fileName: "cosign.key"
+              secretBytes: "${COSIGN_PRIVATE_KEY}"
+              description: "Cosign image signing private key"
+
+          - string:
+              scope: GLOBAL
+              id: "cosign-key-password"
+              secret: "${COSIGN_KEY_PASSWORD}"
+              description: "Cosign private key password"
+
 # nexus-credentials    -> needed only for Nexus push
 # github-credentials   -> needed only for private Git or GitOps push
-# cosign-private-key   -> needed only for Cosign signing
-# cosign-key-password  -> needed only for encrypted Cosign key
+
 # slack-webhook        -> needed only when Slack notifications are enabled
 # teams-webhook        -> needed only when Teams notifications are enabled
