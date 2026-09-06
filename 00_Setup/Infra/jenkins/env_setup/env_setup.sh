@@ -3,7 +3,7 @@
 set -euo pipefail
 
 echo "Create the env file"
-sudo touch /etc/Jenkins/jenkins-secrets.env
+sudo touch /etc/jenkins/jenkins-secrets.env
 
 echo "Add the ENVs"
 sudo tee /etc/jenkins/jenkins-secrets.env > /dev/null <<EOF

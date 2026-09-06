@@ -61,7 +61,7 @@ spec:
       name: db-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: gp3 # standard (for KIND)
+      storageClassName: standard # use standard for KIND, gp3 for EKS
       resources:
         requests:
           storage: 1Gi

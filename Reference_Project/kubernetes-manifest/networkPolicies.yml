@@ -1,3 +1,27 @@
+# Namespace-wide DNS egress — applies to ALL pods in petclinic-dev.
+# Centralises DNS access so individual policies don't repeat this rule.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: petclinic-dev
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -16,6 +40,9 @@ spec:
     - podSelector:
         matchLabels:
           app: petclinic-app
+    - podSelector:
+        matchLabels:
+          app: db-seed   # allow db-seed Job (init container + seed container)
     ports:
     - protocol: TCP
       port: 5432
@@ -56,12 +83,30 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
+
+---
+
+# NetworkPolicy for the db-seed Job
+# Grants egress to PostgreSQL (5432).
+# DNS egress is handled by the namespace-wide allow-dns-egress policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: network-policy-db-seed
+  namespace: petclinic-dev
+spec:
+  podSelector:
+    matchLabels:
+      app: db-seed
+
+  policyTypes:
+  - Egress
+
+  egress:
   - to:
-    - namespaceSelector:
+    - podSelector:
         matchLabels:
-          kubernetes.io/metadata.name: kube-system
+          app: postgres
     ports:
-    - protocol: UDP
-      port: 53
     - protocol: TCP
-      port: 53
+      port: 5432

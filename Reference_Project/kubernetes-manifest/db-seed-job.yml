@@ -1,0 +1,107 @@
+# The Job waits until postgres-0 is ready (initContainer polls pg_isready) and then runs the seed SQL once.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-seed-sql
+  namespace: petclinic-dev
+data:
+  seed.sql: |
+    -- Idempotent seed using WHERE NOT EXISTS.
+    -- Safe to re-run without needing a UNIQUE constraint on the types table.
+    INSERT INTO types (name)
+    SELECT v.name
+    FROM (VALUES
+      ('cat'),
+      ('dog'),
+      ('lizard'),
+      ('snake'),
+      ('bird'),
+      ('hamster')
+    ) AS v(name)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM types WHERE types.name = v.name
+    );
+
+    -- Verify
+    SELECT id, name FROM types ORDER BY id;
+
+---
+
+# ----- Job: runs seed.sql against postgres-0 --------------------------------
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-seed
+  namespace: petclinic-dev
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: db-seed
+    spec:
+      restartPolicy: OnFailure
+
+      initContainers:
+      - name: wait-for-postgres
+        image: docker.io/postgres:15
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for PostgreSQL to be ready..."
+          until pg_isready -h postgres-svc.petclinic-dev.svc.cluster.local -U petclinic -d petclinic; do
+            echo "  postgres not ready yet — sleeping 3s"
+            sleep 3
+          done
+          echo "PostgreSQL is ready."
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+      containers:
+      - name: seed
+        image: docker.io/postgres:15
+        command:
+        - sh
+        - -c
+        - |
+          psql \
+            -h postgres-svc.petclinic-dev.svc.cluster.local \
+            -U petclinic \
+            -d petclinic \
+            -f /sql/seed.sql
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        volumeMounts:
+        - name: seed-sql
+          mountPath: /sql
+
+      volumes:
+      - name: seed-sql
+        configMap:
+          name: db-seed-sql
