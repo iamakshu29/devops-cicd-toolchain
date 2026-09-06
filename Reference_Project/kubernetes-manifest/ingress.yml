@@ -20,8 +20,6 @@ spec:
   - hosts:
     - petclinic.local
     secretName: petclinic-tls-secret
-status:
-  loadBalancer: {}
 
 # kubectl create ingress petclinic-ingress --class=nginx \
 # --rule="petclinic.local/*=petclinic-svc:8080,tls=petclinic-tls-secret" \
