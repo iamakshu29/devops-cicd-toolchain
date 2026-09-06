@@ -15,13 +15,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/iamakshu29/devops-cicd-toolchain.git'
-            }
-        }
-
         stage('Checkov — IaC Scan') {
             steps {
                 sh '''
@@ -162,42 +155,25 @@ pipeline {
             }
         }
 
-    //     stage('Update GitOps Repo') {
-    //         steps {
-    //             withCredentials([usernamePassword(credentialsId: 'github-credentials',
-    //                                                usernameVariable: 'GIT_USER',
-    //                                                passwordVariable: 'GIT_TOKEN')]) {
-    //                 sh """
-    //                     rm -rf gitops-repo
-    //                     git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/your-org/gitops-repo.git
-    //                     cd gitops-repo
-    //                     sed -i 's|image: nexus:8082/sample-app:.*|image: ${IMAGE_NAME}:${IMAGE_TAG}|' k8s/deployment.yaml
-    //                     git config user.email "jenkins@ci.local"
-    //                     git config user.name "Jenkins"
-    //                     git diff --quiet || git commit -am "ci: update image to ${IMAGE_TAG}"
-    //                     git push
-    //                 """
-    //                                                }
-    //         }
-    //     }
-    // }
+        stage('Update GitOps Repo') {
+            steps {
+                sh """
+                    cd Reference_Project/petclinic_app/
 
-    // post {
-    //     regression {
-    //         slackSend channel: '#deployments', color: 'danger',
-    //                   message: "NEWLY BROKEN: ${env.JOB_NAME} #${env.BUILD_NUMBER} | <${env.BUILD_URL}|View>"
-    //     }
-    //     fixed {
-    //         slackSend channel: '#deployments', color: 'good',
-    //                   message: "FIXED: ${env.JOB_NAME} #${env.BUILD_NUMBER} | <${env.BUILD_URL}|View>"
-    //     }
-    //     failure {
-    //         slackSend channel: '#deployments', color: 'danger',
-    //                   message: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} | <${env.BUILD_URL}|View>"
-    //     }
-    //     always {
-    //         cleanWs()   // clean workspace after each build
-    //     }
-    // }
+                    sed -i 's|imageTag: .*|imageTag: ${IMAGE_TAG}|' values-prod.yaml
+
+                    git config user.email "jenkins@ci.local"
+                    git config user.name "Jenkins"
+
+                    if ! git diff --quiet -- values-prod.yaml; then
+                        git add values-prod.yaml
+                        git commit -m "ci: update image to ${IMAGE_TAG}"
+                        git push origin HEAD:${BRANCH_NAME}
+                    else
+                        echo "No changes to commit"
+                    fi
+                """
+            }
+        }
     }
 }
