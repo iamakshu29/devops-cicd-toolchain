@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // must match name in Manage Jenkins → Tools → Maven installations
         maven 'maven'
     }
 
