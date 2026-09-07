@@ -1,4 +1,4 @@
-# Namespace-wide DNS egress — applies to ALL pods in petclinic-dev.
+# Namespace-wide DNS egress — applies to ALL pods.
 # Centralises DNS access so individual policies don't repeat this rule.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
