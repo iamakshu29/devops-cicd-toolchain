@@ -109,17 +109,27 @@ pipeline {
 
         stage('Image Push to DockerHub') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
-                    sh '''
-                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                    docker push ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
-                '''
+                script {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'dockerhub-creds',
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )
+                    ]) {
+                        sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}
+                    '''
+                    }
+
+                    // registry-side digest; docker inspect reports the child manifest, not the index the tag resolves to
+                    env.IMAGE_DIGEST = sh(
+                        script: "docker buildx imagetools inspect ${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG} --format '{{.Manifest.Digest}}'",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Registry digest: ${env.IMAGE_DIGEST}"
                 }
             }
         }
@@ -144,24 +154,18 @@ pipeline {
                     sh '''
                         echo "Getting Digest"
                         IMAGE="docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
-                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
+                        DIGEST="docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}@${IMAGE_DIGEST}"
 
-                        if [ -z "$DIGEST" ] || [ "$DIGEST" = "<no value>" ]; then
+                        if [ -z "${IMAGE_DIGEST}" ]; then
                             echo "No registry digest found for $IMAGE. The image must be pushed before signing." >&2
                             exit 1
                         fi
-
-                        case "$DIGEST" in
-                            docker.io/*) ;;
-                            */*) DIGEST="docker.io/$DIGEST" ;;
-                            *) echo "Unexpected image digest: $DIGEST" >&2; exit 1 ;;
-                        esac
 
                         echo "Signing $DIGEST"
                         COSIGN_PASSWORD="$COSIGN_PASSWORD" \
                         cosign sign --key "$COSIGN_KEY" --yes "$DIGEST"
 
-                        echo "Verifying $IMAGE"
+                        echo "Verifying $DIGEST"
 
                         docker logout
                     '''
@@ -182,12 +186,9 @@ pipeline {
                             sh '''
                                 echo "Updating Kubernetes deployment with the pushed image digest..."
 
-                                DIGEST=$(docker inspect \
-                                    --format='{{index .RepoDigests 0}}' \
-                                    "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
-                                DIGEST_HASH="${DIGEST##*:}"
+                                DIGEST_HASH="${IMAGE_DIGEST##*:}"
 
-                                if [ -z "$DIGEST_HASH" ] || [ "$DIGEST_HASH" = "<no value>" ]; then
+                                if [ -z "$DIGEST_HASH" ]; then
                                     echo "Unable to determine the pushed image digest" >&2
                                     exit 1
                                 fi
@@ -230,12 +231,9 @@ pipeline {
                             sh '''
                                 echo "Updating Helm values with the pushed image digest..."
 
-                                DIGEST=$(docker inspect \
-                                    --format='{{index .RepoDigests 0}}' \
-                                    "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
-                                DIGEST_HASH="${DIGEST##*:}"
+                                DIGEST_HASH="${IMAGE_DIGEST##*:}"
 
-                                if [ -z "$DIGEST_HASH" ] || [ "$DIGEST_HASH" = "<no value>" ]; then
+                                if [ -z "$DIGEST_HASH" ]; then
                                     echo "Unable to determine the pushed image digest" >&2
                                     exit 1
                                 fi
