@@ -240,7 +240,7 @@ pipeline {
                                     exit 1
                                 fi
 
-                                sed -i -E "s|^  imageTag:.*|  imageTag: ${DIGEST_HASH}|" values-prod.yaml
+                                sed -i -E "s|^  imageDigest:.*|  imageDigest: sha256:${DIGEST_HASH}|" values-prod.yaml
 
                                 git config user.email "jenkins@ci.local"
                                 git config user.name "Jenkins"

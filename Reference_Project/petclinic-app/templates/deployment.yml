@@ -22,7 +22,7 @@ spec:
         app: {{ .Values.appName }}-app
     spec:
       containers:
-      - image: {{ .Values.app.containerImage }}:{{ .Values.app.imageTag }}
+      - image: {{ .Values.app.containerImage }}{{ if .Values.app.imageDigest }}@{{ .Values.app.imageDigest }}{{ else }}:{{ .Values.app.imageTag }}{{ end }}
         name: {{ .Values.appName }}
 
         env:
