@@ -90,6 +90,8 @@ spec:
           attestors:
             - entries:
                 - keys:
-                    secret:
-                      name: cosign-public-key
-                      namespace: petclinic-dev
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDN45YOPicFfPbD537CZ23TtaT2x8
+                      +cLqQVVKOPLZdCanYA/XiRT72juLdPVhBG5j0bayd7+wVFFKZfWUtHAZlA==
+                      -----END PUBLIC KEY-----

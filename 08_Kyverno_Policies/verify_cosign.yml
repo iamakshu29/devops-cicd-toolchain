@@ -18,6 +18,7 @@ spec:
           attestors:
             - entries:
                 - keys:
-                    secret:
-                      name: cosign-public-key
-                      namespace: kyverno
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      <paste contents of cosign.pub here>
+                      -----END PUBLIC KEY-----

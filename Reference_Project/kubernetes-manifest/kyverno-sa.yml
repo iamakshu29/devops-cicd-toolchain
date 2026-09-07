@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kyverno-admission-controller
-  namespace: kyverno
-
-# kubectl create sa kyverno-admission-controller -n kyverno --dry-run=client -o yaml > kyverno-sa.yml
