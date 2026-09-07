@@ -52,7 +52,7 @@ app:
 db:
   replicas: 2
   minReadySeconds: 10
-  containerImage: docker.io/iamakshu/petclinic-app@sha256
+  containerImage: docker.io/postgres:15
   env:
     POSTGRES_USER: petclinic
     POSTGRES_DB: petclinic

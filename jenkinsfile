@@ -240,8 +240,6 @@ pipeline {
                                     exit 1
                                 fi
 
-                                IMAGE_REPOSITORY="docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}@sha256"
-                                sed -i -E "s|^  containerImage:.*|  containerImage: ${IMAGE_REPOSITORY}|" values-prod.yaml
                                 sed -i -E "s|^  imageTag:.*|  imageTag: ${DIGEST_HASH}|" values-prod.yaml
 
                                 git config user.email "jenkins@ci.local"
