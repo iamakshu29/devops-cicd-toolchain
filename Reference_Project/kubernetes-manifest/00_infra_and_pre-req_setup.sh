@@ -111,6 +111,31 @@ fi
 
 echo "-----------------------------------------------------------------------------------------------------------------------------"
 
+echo "Check if ArgoCD is present"
+
+if kubectl get deploy argocd-server -n argocd >/dev/null 2>&1; then
+    
+    echo "ArgoCD is installed"
+
+else
+
+    echo "ArgoCD is not installed, Installing it ....."
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+    echo "Waiting for all pods to be ready..."
+    kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=180s
+
+    curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+    chmod +x /usr/local/bin/argocd
+
+    echo "Verifying"
+    kubectl get deploy argocd-server -n argocd
+
+fi
+
+echo "-----------------------------------------------------------------------------------------------------------------------------"
+
 echo "Checking Helm"
 
 if command -v helm >/dev/null 2>&1; then
@@ -132,3 +157,11 @@ echo "--------------------------------------------------------------------------
 helm repo add kyverno https://kyverno.github.io/kyverno/
 helm repo update
 helm upgrade --install kyverno kyverno/kyverno --namespace kyverno --create-namespace
+
+echo "-----------------------------------------------------------------------------------------------------------------------------"
+
+echo "Getting ArgoCD initial-password and Username is 'admin'"
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d && echo
+
+echo "Port-forward using ..."
+echo "kubectl port-forward svc/argocd-server -n argocd 8443:443 &"
