@@ -193,7 +193,7 @@ pipeline {
                                 fi
 
                                 sed -i -E \
-                                    "s|image:.*petclinic-app(:|@sha256:).*|image: docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}@sha256:${DIGEST_HASH}|" \
+                                    "s#image:.*petclinic-app(:|@sha256:).*#image: docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}@sha256:${DIGEST_HASH}#" \
                                     deployment.yml
 
                                 git config user.email "jenkins@ci.local"
