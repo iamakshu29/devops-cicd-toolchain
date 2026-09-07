@@ -181,10 +181,21 @@ pipeline {
                             )
                         ]) {
                             sh '''
-                                echo "Updating Kubernetes deployment image..."
+                                echo "Updating Kubernetes deployment with the pushed image digest..."
 
-                                # Update image tag in deployment.yml
-                                sed -i -E "s|(image:\\s*.*petclinic-app:).*|\\1${IMAGE_TAG}|" deployment.yml
+                                DIGEST=$(docker inspect \
+                                    --format='{{index .RepoDigests 0}}' \
+                                    "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
+                                DIGEST_HASH="${DIGEST##*:}"
+
+                                if [ -z "$DIGEST_HASH" ] || [ "$DIGEST_HASH" = "<no value>" ]; then
+                                    echo "Unable to determine the pushed image digest" >&2
+                                    exit 1
+                                fi
+
+                                sed -i -E \
+                                    "s|image:.*petclinic-app(:|@sha256:).*|image: docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}@sha256:${DIGEST_HASH}|" \
+                                    deployment.yml
 
                                 git config user.email "jenkins@ci.local"
                                 git config user.name "Jenkins"
@@ -193,7 +204,7 @@ pipeline {
                                     echo "Changes detected."
 
                                     git add deployment.yml
-                                    git commit -m "ci: update image to ${IMAGE_TAG} [skip ci]"
+                                    git commit -m "ci: pin image to ${DIGEST_HASH} [skip ci]"
 
                                     echo "Pushing changes to ${BRANCH_NAME}..."
                                     git push origin HEAD:${BRANCH_NAME}
@@ -218,10 +229,21 @@ pipeline {
                             )
                         ]) {
                             sh '''
-                                echo "Updating Helm values image tag..."
+                                echo "Updating Helm values with the pushed image digest..."
 
-                                # Update imageTag (line 12) while preserving indentation
-                                sed -i -E "s|(imageTag:\\s*).*|\\1${IMAGE_TAG}|" values-prod.yaml
+                                DIGEST=$(docker inspect \
+                                    --format='{{index .RepoDigests 0}}' \
+                                    "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
+                                DIGEST_HASH="${DIGEST##*:}"
+
+                                if [ -z "$DIGEST_HASH" ] || [ "$DIGEST_HASH" = "<no value>" ]; then
+                                    echo "Unable to determine the pushed image digest" >&2
+                                    exit 1
+                                fi
+
+                                IMAGE_REPOSITORY="docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}@sha256"
+                                sed -i -E "s|^  containerImage:.*|  containerImage: ${IMAGE_REPOSITORY}|" values-prod.yaml
+                                sed -i -E "s|^  imageTag:.*|  imageTag: ${DIGEST_HASH}|" values-prod.yaml
 
                                 git config user.email "jenkins@ci.local"
                                 git config user.name "Jenkins"
@@ -230,7 +252,7 @@ pipeline {
                                     echo "Changes detected in values-prod.yaml."
 
                                     git add values-prod.yaml
-                                    git commit -m "ci: update helm imageTag to ${IMAGE_TAG} [skip ci]"
+                                    git commit -m "ci: pin helm image to ${DIGEST_HASH} [skip ci]"
 
                                     echo "Pushing changes to ${BRANCH_NAME}..."
                                     git push origin HEAD:${BRANCH_NAME}

@@ -82,7 +82,7 @@ spec:
                 - Pod
       verifyImages:
         - imageReferences:
-            - "docker.io/iamakshu/petclinic-app:*"
+            - "docker.io/iamakshu/petclinic-app*"
           required: true
           verifyDigest: true
           mutateDigest: true
