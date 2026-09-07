@@ -82,7 +82,7 @@ spec:
                 - Pod
       verifyImages:
         - imageReferences:
-            - "{{ .Values.app.containerImage }}:*"
+            - "docker.io/iamakshu/petclinic-app:*"
           attestors:
             - entries:
                 - keys:

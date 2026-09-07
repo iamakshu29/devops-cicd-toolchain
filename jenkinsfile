@@ -192,25 +192,41 @@ pipeline {
             }
         }
 
-        // stage('Update Kubernetes Helm Values') {
-        //     steps {
-        //         sh """
-        //             cd Reference_Project/petclinic-app/
+        stage('Update Kubernetes Helm Values') {
+            steps {
+                dir('Reference_Project/petclinic-app') {
+                    script {
+                        withCredentials([
+                            gitUsernamePassword(
+                                credentialsId: 'github-creds',
+                                gitToolName: 'Default'
+                            )
+                        ]) {
+                            sh '''
+                                echo "Updating Helm values image tag..."
 
-        //             sed -i 's|imageTag: .*|imageTag: ${IMAGE_TAG}|' values-prod.yaml
+                                # Update imageTag (line 12) while preserving indentation
+                                sed -i -E "s|(imageTag:\\s*).*|\\1${IMAGE_TAG}|" values-prod.yaml
 
-        //             git config user.email "jenkins@ci.local"
-        //             git config user.name "Jenkins"
+                                git config user.email "jenkins@ci.local"
+                                git config user.name "Jenkins"
 
-        //             if ! git diff --quiet -- values-prod.yaml; then
-        //                 git add values-prod.yaml
-        //                 git commit -m "ci: update image to ${IMAGE_TAG}"
-        //                 git push origin HEAD:${BRANCH_NAME}
-        //             else
-        //                 echo "No changes to commit"
-        //             fi
-        //         """
-        //     }
-        // }
+                                if ! git diff --quiet -- deployment.yml; then
+                                    echo "Changes detected in values-prod.yaml."
+
+                                    git add values-prod.yaml
+                                    git commit -m "ci: update helm imageTag to ${IMAGE_TAG} [skip ci]"
+
+                                    echo "Pushing changes to ${BRANCH_NAME}..."
+                                    git push origin HEAD:${BRANCH_NAME}
+                                else
+                                    echo "No changes to commit in values-prod.yaml."
+                                fi
+                            '''
+                        }
+                    }
+                }
+            }
+        }
     }
 }
