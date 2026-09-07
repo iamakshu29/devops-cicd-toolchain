@@ -50,41 +50,41 @@ spec:
 
       # Wait for PostgreSQL to accept connections
       initContainers:
-      - name: wait-for-postgres
-        image: {{ .Values.db.containerImage }}
-        command:
-        - sh
-        - -c
-        - |
-          echo "Waiting for PostgreSQL to be ready..."
+        - name: wait-for-postgres
+          image: {{ .Values.db.containerImage }}
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL to be ready..."
 
-          until pg_isready \
-            -h postgres-svc.{{ .Release.Namespace }}.svc.cluster.local \
-            -U petclinic \
-            -d petclinic; do
+              until pg_isready \
+                -h postgres-svc.{{ .Release.Namespace }}.svc.cluster.local \
+                -U petclinic \
+                -d petclinic; do
 
-            echo "PostgreSQL not ready yet — sleeping 3s"
-            sleep 3
-          done
+                echo "PostgreSQL not ready yet — sleeping 3s"
+                sleep 3
+              done
 
-          echo "PostgreSQL is ready."
+              echo "PostgreSQL is ready."
 
-        env:
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secret
-              key: POSTGRES_PASSWORD
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
         
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
 
-      # Wait for the Petclinic schema to exist
+        # Wait for the Petclinic schema to exist
         - name: wait-for-schema
           image: {{ .Values.db.containerImage }}
           command:
@@ -123,43 +123,43 @@ spec:
 
       # Run seed SQL
       containers:
-      - name: seed
-        image: {{ .Values.db.containerImage }}
-        command:
-        - sh
-        - -c
-        - |
-          echo "Running database seed..."
+        - name: seed
+          image: {{ .Values.db.containerImage }}
+          command:
+            - sh
+            - -c
+            - |
+              echo "Running database seed..."
 
-          psql \
-            -h postgres-svc.{{ .Release.Namespace }}.svc.cluster.local \
-            -U petclinic \
-            -d petclinic \
-            -v ON_ERROR_STOP=1 \
-            -f /sql/seed.sql
-          
-          echo "Database seed completed successfully."
+              psql \
+                -h postgres-svc.{{ .Release.Namespace }}.svc.cluster.local \
+                -U petclinic \
+                -d petclinic \
+                -v ON_ERROR_STOP=1 \
+                -f /sql/seed.sql
+              
+              echo "Database seed completed successfully."
 
-        env:
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secret
-              key: POSTGRES_PASSWORD
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
 
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
 
-        volumeMounts:
-        - name: seed-sql
-          mountPath: /sql
+          volumeMounts:
+            - name: seed-sql
+              mountPath: /sql
 
       volumes:
-      - name: seed-sql
-        configMap:
-          name: db-seed-sql
+        - name: seed-sql
+          configMap:
+            name: db-seed-sql

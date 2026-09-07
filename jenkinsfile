@@ -211,7 +211,7 @@ pipeline {
                                 git config user.email "jenkins@ci.local"
                                 git config user.name "Jenkins"
 
-                                if ! git diff --quiet -- deployment.yml; then
+                                if ! git diff --quiet -- values-prod.yaml; then
                                     echo "Changes detected in values-prod.yaml."
 
                                     git add values-prod.yaml
