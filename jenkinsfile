@@ -157,23 +157,38 @@ pipeline {
 
         stage('Update Kubernetes Manifest') {
             steps {
-                sh """
-                    cd Reference_Project/kubernetes-manifest/
+                dir('Reference_Project/kubernetes-manifest') {
+                    script {
+                        withCredentials([
+                            gitUsernamePassword(
+                                credentialsId: 'github-creds',
+                                gitToolName: 'Default'
+                            )
+                        ]) {
+                            sh '''
+                                echo "Updating Kubernetes deployment image..."
 
-                    # Update image tag in deployment.yml
-                    sed -i -E 's|(image:\\s*.*petclinic-app:).*|\\1${IMAGE_TAG}|' deployment.yml
+                                # Update image tag in deployment.yml
+                                sed -i -E "s|(image:\\s*.*petclinic-app:).*|\\1${IMAGE_TAG}|" deployment.yml
 
-                    git config user.email "jenkins@ci.local"
-                    git config user.name "Jenkins"
+                                git config user.email "jenkins@ci.local"
+                                git config user.name "Jenkins"
 
-                    if ! git diff --quiet -- deployment.yml; then
-                        git add deployment.yml
-                        git commit -m "ci: update image to ${IMAGE_TAG} [skip ci]"
-                        git push origin HEAD:${BRANCH_NAME}
-                    else
-                        echo "No changes to commit"
-                    fi
-                """
+                                if ! git diff --quiet -- deployment.yml; then
+                                    echo "Changes detected."
+
+                                    git add deployment.yml
+                                    git commit -m "ci: update image to ${IMAGE_TAG} [skip ci]"
+
+                                    echo "Pushing changes to ${BRANCH_NAME}..."
+                                    git push origin HEAD:${BRANCH_NAME}
+                                else
+                                    echo "No changes to commit."
+                                fi
+                            '''
+                        }
+                    }
+                }
             }
         }
 
