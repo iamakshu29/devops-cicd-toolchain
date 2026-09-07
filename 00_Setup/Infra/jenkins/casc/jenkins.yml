@@ -66,6 +66,13 @@ credentials:
               password: "${DOCKERHUB_TOKEN}"
               description: "Docker Hub credentials"
 
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-creds"
+              username: "${GITHUB_USERNAME}"
+              password: "${GITHUB_TOKEN}"
+              description: "Github credentials"
+
           - file:
               scope: GLOBAL
               id: "cosign-private-key"
@@ -80,7 +87,5 @@ credentials:
               description: "Cosign private key password"
 
 # nexus-credentials    -> needed only for Nexus push
-# github-credentials   -> needed only for private Git or GitOps push
-
 # slack-webhook        -> needed only when Slack notifications are enabled
 # teams-webhook        -> needed only when Teams notifications are enabled

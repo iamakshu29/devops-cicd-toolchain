@@ -21,7 +21,7 @@ spec:
         app: petclinic-app
     spec:
       containers:
-      - image: docker.io/maramaroua/spring-petclinic
+      - image: docker.io/iamakshu/petclinic-app:8
         name: petclinic
 
         env:

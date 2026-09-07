@@ -6,23 +6,22 @@ metadata:
 spec:
   validationFailureAction: Enforce
   rules:
-  - name: check-resource-limits
-    match:
-      any:
-      - resources:
-          kinds: [Pod]
-    validate:
-      message: "CPU and memory limits are required on all containers."
-      pattern:
-        spec:
-          containers:
+    - name: check-resource-limits
+      match:
+        any:
           - resources:
-              limits:
-                memory: "?*"
-                cpu: "?*"
+              kinds: [Pod]
+      validate:
+        message: "CPU and memory limits are required on all containers."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
 
 ---
-
 apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
@@ -30,19 +29,18 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   rules:
-  - name: add-managed-by-label
-    match:
-      any:
-      - resources:
-          kinds: [Pod]
-    mutate:
-      patchStrategicMerge:
-        metadata:
-          labels:
-            managed-by: dev-team
+    - name: add-managed-by-label
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              managed-by: dev-team
 
 ---
-
 apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
@@ -51,14 +49,40 @@ metadata:
 spec:
   validationFailureAction: Enforce
   rules:
-  - name: validate-registries
-    match:
-      any:
-      - resources:
-          kinds: [Pod]
-    validate:
-      message: "Images must come from docker.io, gcr.io, or quay.io only."
-      pattern:
-        spec:
-          containers:
-          - image: "docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
+    - name: validate-registries
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Images must come from docker.io, gcr.io, or quay.io only."
+        pattern:
+          spec:
+            containers:
+              - image: "docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
+
+---
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: verify-cosign-signature
+  namespace: {{ .Release.Namespace }}
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: verify-image-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "{{ .Values.app.containerImage }}:*"
+          attestors:
+            - entries:
+                - keys:
+                    secret:
+                      name: cosign-public-key
+                      namespace: {{ .Release.Namespace }}

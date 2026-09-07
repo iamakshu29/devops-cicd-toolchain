@@ -62,3 +62,30 @@ spec:
         spec:
           containers:
           - image: "docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
+
+---
+
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: verify-cosign-signature
+  namespace: petclinic-dev
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: verify-image-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "{{ .Values.app.containerImage }}:*"
+          attestors:
+            - entries:
+                - keys:
+                    secret:
+                      name: cosign-public-key
+                      namespace: petclinic-dev

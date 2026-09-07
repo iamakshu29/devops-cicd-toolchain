@@ -8,7 +8,7 @@ app:
   replicas: 4
   maxUnavailable: 3
   maxSurge: 1
-  containerImage: docker.io/maramaroua/spring-petclinic
+  containerImage: docker.io/iamakshu/petclinic-app
   imageTag: 8
   env:
     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-svc:5432/petclinic
