@@ -38,7 +38,6 @@ sudo chmod 600 /etc/jenkins/jenkins-secrets.env
 
 sudo systemctl daemon-reload
 sudo systemctl enable jenkins
-sudo systemctl enable jenkins
 
 if sudo systemctl is-active --quiet jenkins; then
     echo "Jenkins is running — restarting..."

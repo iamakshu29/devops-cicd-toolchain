@@ -1,19 +1,67 @@
-00_Setup -> Infra ->
-Execute - sh jenkins_nodes_setup.sh apply
+# Setup Flow
 
-After The Infra got Created
+1. Create infra
 
-Create the Cosing Key with Password - `cosign generate-key-pair`
+   ```bash
+   cd 00_Setup/Infra
+   sh jenkins_nodes_setup.sh apply
+   ```
 
-Add the Env Variables in env_setup.sh for Jenkins Configuration.
-- base64 encoded cosign.key, jenkins new public_IP 
+2. Create cosign key (one time)
 
-Copy that Script scp -i "jenkins_master" -r ../jenkins/env_setup/ ubuntu@44.208.21.101:/tmp/
+   ```bash
+   cosign generate-key-pair
+   base64 -w0 cosign.key
+   ```
 
-Execute - sh env_setup.sh in EC2 Jenkins_Master
+3. Put all values in `jenkins/env_setup/jenkins.env`
+   (jenkins IP, base64 cosign key, github, dockerhub, sonar, nvd)
 
-Regarding Jenkins
+4. Copy `jenkins.yml` to the server (needed whenever you edit it, since it is baked in the AMI)
 
-1. Add OWASP related thing manually, they are not present in Jenkins CasC.
-2. Copy the Cosign.key to local and upload as secret file in credentials in Jenkins. (As I stored the key and using the same key everytime, no need to do every time)
-3. Copy the Pipeline and run it.
+   ```bash
+   cd 00_Setup/Infra/terraform
+   IP=<jenkins_public_ip>
+   scp -i jenkins_master ../jenkins/casc/jenkins.yml ubuntu@$IP:/tmp/jenkins.yml
+   ssh -i jenkins_master ubuntu@$IP '
+     sudo cp /tmp/jenkins.yml /var/lib/jenkins/casc_configs/jenkins.yml
+     sudo chown jenkins:jenkins /var/lib/jenkins/casc_configs/jenkins.yml
+     sudo chmod 600 /var/lib/jenkins/casc_configs/jenkins.yml'
+   ```
+
+5. Copy env script and run it
+
+   ```bash
+   scp -i jenkins_master -r ../jenkins/env_setup/ ubuntu@$IP:/tmp/
+   ssh -i jenkins_master ubuntu@$IP 'cd /tmp/env_setup && sh env_setup.sh'
+   ```
+
+6. In Jenkins
+
+   - Add OWASP Dependency-Check tool manually (not in CasC)
+   - Copy the pipeline and run it
+
+---
+
+Notes
+
+- `jenkins.yml` and `plugins.txt` live inside the AMI. Editing them locally does nothing until you do step 4 or rebuild the AMI.
+- Every variable in `jenkins.env` must be filled. One missing value stops the rest of the credentials from loading.
+- `COSIGN_PRIVATE_KEY` must be single line base64.
+- Check with `sudo journalctl -u jenkins | grep -i casc`
+
+Rebuild AMI (permanent fix instead of step 4)
+
+```bash
+cd 00_Setup/Infra/packer
+packer build .
+# copy artifact_id from manifest.json into terraform/terraform.tfvars
+cd ../terraform && terraform apply
+```
+
+Destroy
+
+```bash
+./jenkins_nodes_setup.sh destroy
+./jenkins_nodes_setup.sh destroy --delete-ami
+```
