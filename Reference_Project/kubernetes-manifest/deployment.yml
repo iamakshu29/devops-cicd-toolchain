@@ -21,7 +21,7 @@ spec:
         app: petclinic-app
     spec:
       containers:
-      - image: docker.io/iamakshu/petclinic-app@sha256:b5d63fef4ccb18daac56d171fcc29a2bcb98964f094a2814459f09509035915e
+      - image: docker.io/iamakshu/petclinic-app@sha256:753bc34ddd28b6ec1d60beff87d064364aad0b7c0c064da8a57c0b2a45f33839
         name: petclinic
 
         env:
