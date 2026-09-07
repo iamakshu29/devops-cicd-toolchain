@@ -9,7 +9,7 @@ app:
   maxUnavailable: 3
   maxSurge: 1
   containerImage: docker.io/iamakshu/petclinic-app
-  imageTag: 4
+  imageTag: 5
   env:
     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-svc:5432/petclinic
     SPRING_DATASOURCE_USERNAME: petclinic
@@ -105,7 +105,7 @@ resourceQuota:
     limits.memory: "4Gi"
     configmaps: "10"
     persistentvolumeclaims: "4"
-    pods: "9"
+    pods: "12"
     replicationcontrollers: "20"
     secrets: "10"
     services: "10"
