@@ -161,7 +161,7 @@ pipeline {
                         COSIGN_PASSWORD="$COSIGN_PASSWORD" \
                         cosign sign --key "$COSIGN_KEY" --yes "$DIGEST"
 
-                        // echo "Verifying $IMAGE"
+                        echo "Verifying $IMAGE"
 
                         docker logout
                     '''
