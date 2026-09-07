@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kyverno-secret-reader-binding
+  namespace: petclinic-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kyverno-secret-reader
+subjects:
+  - kind: ServiceAccount
+    name: kyverno-admission-controller
+    namespace: kyverno
+
+# kubectl create rolebinding kyverno-secret-reader-binding --role=kyverno-secret-reader --serviceaccount=kyverno:kyverno-admission-controller -n petclinic-dev --dry-run=client -o yaml > kyverno-rolebinding.yml
