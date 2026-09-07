@@ -105,7 +105,7 @@ resourceQuota:
     limits.memory: "4Gi"
     configmaps: "10"
     persistentvolumeclaims: "4"
-    pods: "9"
+    pods: "12"
     replicationcontrollers: "20"
     secrets: "10"
     services: "10"
