@@ -138,30 +138,26 @@ pipeline {
         stage('Cosign — Sign Image') {
             steps {
                 withCredentials([
-                    file(credentialsId: 'cosign-private-key', variable: 'COSIGN_KEY'),
+                    file(credentialsId: 'cosign-private-key', variable: 'COSIGN_PVT_KEY'),
+                    string(credentialsId: 'cosign-public-key', variable: 'COSIGN_PUB_KEY'),
                     string(credentialsId: 'cosign-key-password', variable: 'COSIGN_PASSWORD')
                 ]) {
                     sh '''
                         echo "Getting Digest"
-                        IMAGE="docker.io/${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
-                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${DOCKER_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}")
+                        IMAGE="docker.io/$DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG"
+                        DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
 
                         if [ -z "$DIGEST" ] || [ "$DIGEST" = "<no value>" ]; then
                             echo "No registry digest found for $IMAGE. The image must be pushed before signing." >&2
                             exit 1
                         fi
 
-                        case "$DIGEST" in
-                            docker.io/*) ;;
-                            */*) DIGEST="docker.io/$DIGEST" ;;
-                            *) echo "Unexpected image digest: $DIGEST" >&2; exit 1 ;;
-                        esac
-
                         echo "Signing $DIGEST"
                         COSIGN_PASSWORD="$COSIGN_PASSWORD" \
-                        cosign sign --key "$COSIGN_KEY" --yes "$DIGEST"
+                        cosign sign --key "$COSIGN_PVT_KEY" --yes "$DIGEST"
 
-                        echo "Verifying $IMAGE"
+                        echo "Verifying $DIGEST"
+                        cosign verify --key "$COSIGN_PUB_KEY" "$DIGEST"
 
                         docker logout
                     '''

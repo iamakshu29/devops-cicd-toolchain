@@ -79,6 +79,13 @@ credentials:
               fileName: "cosign.key"
               secretBytes: "${COSIGN_PRIVATE_KEY}"
               description: "Cosign image signing private key"
+          
+          - file:
+              scope: GLOBAL
+              id: "cosign-public-key"
+              fileName: "cosign.pub"
+              secretBytes: "${COSIGN_PUBLIC_KEY}"
+              description: "Cosign image verifying public key"
 
           - string:
               scope: GLOBAL

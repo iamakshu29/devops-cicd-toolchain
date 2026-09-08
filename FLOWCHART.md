@@ -12,10 +12,11 @@
    ```bash
    cosign generate-key-pair
    base64 -w0 cosign.key
+   base64 -w 0 cosign.pub
    ```
 
 3. Put all values in `jenkins/env_setup/jenkins.env`
-   (jenkins IP, base64 cosign key, github, dockerhub, sonar, nvd)
+   (jenkins IP, base64 cosign key {private and public}, cosign password, github, dockerhub, sonar, nvd)
 
 4. Copy `jenkins.yml` to the server (needed whenever you edit it, since it is baked in the AMI)
 
@@ -37,7 +38,6 @@
    ```
 
 6. In Jenkins
-
    - Add OWASP Dependency-Check tool manually (not in CasC)
    - Copy the pipeline and run it
 
@@ -47,7 +47,7 @@ Notes
 
 - `jenkins.yml` and `plugins.txt` live inside the AMI. Editing them locally does nothing until you do step 4 or rebuild the AMI.
 - Every variable in `jenkins.env` must be filled. One missing value stops the rest of the credentials from loading.
-- `COSIGN_PRIVATE_KEY` must be single line base64.
+- `COSIGN_PRIVATE_KEY` and `COSIGN_PUBLIC_KEY` must be single line base64.
 - Check with `sudo journalctl -u jenkins | grep -i casc`
 
 Rebuild AMI (permanent fix instead of step 4)
