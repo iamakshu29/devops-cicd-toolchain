@@ -23,7 +23,7 @@
    ```bash
    cd 00_Setup/Infra/terraform
    IP=<jenkins_public_ip>
-   scp -i jenkins_master ../jenkins/casc/jenkins.yml ubuntu@$IP:/tmp/jenkins.yml
+   scp -i jenkins_master -r ../jenkins/ ubuntu@$IP:/tmp
    ssh -i jenkins_master ubuntu@$IP '
      sudo cp /tmp/jenkins.yml /var/lib/jenkins/casc_configs/jenkins.yml
      sudo chown jenkins:jenkins /var/lib/jenkins/casc_configs/jenkins.yml
