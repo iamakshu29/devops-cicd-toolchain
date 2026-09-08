@@ -9,7 +9,7 @@ app:
   maxUnavailable: 3
   maxSurge: 1
   containerImage: docker.io/iamakshu/petclinic-app
-  imageDigest: sha256:e53146a1db0b4bf99436ba9f5c8e2ddf363d97c2cbf47231b6cf174c4d2dcbad
+  imageDigest: sha256:f1f5f4efad35d4a81f73574660ae14f335e04deb78b66f55b32ba6afdeeed823
   env:
     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-svc:5432/petclinic
     SPRING_DATASOURCE_USERNAME: petclinic
