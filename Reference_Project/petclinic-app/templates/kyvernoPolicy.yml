@@ -59,7 +59,7 @@ spec:
         pattern:
           spec:
             containers:
-              - image: "docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
+              - image: "docker.io/* | index.docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
 
 ---
 apiVersion: kyverno.io/v1

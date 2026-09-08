@@ -61,7 +61,7 @@ spec:
       pattern:
         spec:
           containers:
-          - image: "docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
+          - image: "docker.io/* | index.docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
 
 ---
 
@@ -82,7 +82,7 @@ spec:
                 - Pod
       verifyImages:
         - imageReferences:
-            - "docker.io/iamakshu/petclinic-app*"
+            - "index.docker.io/iamakshu/petclinic-app*"
           repository: index.docker.io/iamakshu/petclinic-app
           required: true
           verifyDigest: true
