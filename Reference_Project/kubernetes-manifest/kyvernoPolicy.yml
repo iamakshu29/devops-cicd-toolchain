@@ -83,6 +83,7 @@ spec:
       verifyImages:
         - imageReferences:
             - "docker.io/iamakshu/petclinic-app*"
+          repository: index.docker.io/iamakshu/petclinic-app
           required: true
           verifyDigest: true
           mutateDigest: true

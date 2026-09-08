@@ -80,6 +80,7 @@ spec:
       verifyImages:
         - imageReferences:
             - "{{ .Values.app.containerImage }}*"
+          repository: index.docker.io/iamakshu/petclinic-app
           required: true
           verifyDigest: true
           mutateDigest: true
