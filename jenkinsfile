@@ -161,7 +161,21 @@ pipeline {
                         COSIGN_PASSWORD="$COSIGN_PASSWORD" \
                         cosign sign --key "$COSIGN_KEY" --yes "$DIGEST"
 
-                        echo "Verifying $IMAGE"
+                        echo "Verifying $DIGEST"
+                        for attempt in 1 2 3 4 5; do
+                            if cosign verify --key 07_Cosign/cosign.pub "$DIGEST"; then
+                                echo "Signature verified."
+                                break
+                            fi
+
+                            if [ "$attempt" -eq 5 ]; then
+                                echo "Signature verification failed after 5 attempts." >&2
+                                exit 1
+                            fi
+
+                            echo "Signature is not visible yet; retrying in 5 seconds..."
+                            sleep 5
+                        done
 
                         docker logout
                     '''
