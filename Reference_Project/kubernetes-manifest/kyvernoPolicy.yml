@@ -65,34 +65,35 @@ spec:
 
 ---
 
-apiVersion: kyverno.io/v1
-kind: Policy
-metadata:
-  name: verify-cosign-signature
-  namespace: petclinic-dev
-spec:
-  validationFailureAction: Enforce
-  background: false
-  rules:
-    - name: verify-image-signature
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      verifyImages:
-        - imageReferences:
-            - "index.docker.io/iamakshu/petclinic-app*"
-          repository: index.docker.io/iamakshu/petclinic-app
-          required: true
-          verifyDigest: true
-          mutateDigest: true
-          useCache: false
-          attestors:
-            - entries:
-                - keys:
-                    publicKeys: |-
-                      -----BEGIN PUBLIC KEY-----
-                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDN45YOPicFfPbD537CZ23TtaT2x8
-                      +cLqQVVKOPLZdCanYA/XiRT72juLdPVhBG5j0bayd7+wVFFKZfWUtHAZlA==
-                      -----END PUBLIC KEY-----
+# apiVersion: kyverno.io/v1
+# kind: Policy
+# metadata:
+#   name: verify-cosign-signature
+#   namespace: petclinic-dev
+# spec:
+#   validationFailureAction: Enforce
+#   background: false
+#   rules:
+#     - name: verify-image-signature
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       verifyImages:
+#         - imageReferences:
+#             - "index.docker.io/iamakshu/petclinic-app*"
+#           repository: index.docker.io/iamakshu/petclinic-app
+#           required: true
+#           verifyDigest: true
+#           mutateDigest: true
+#           useCache: false
+#           cosignOCI11: true
+#           attestors:
+#             - entries:
+#                 - keys:
+#                     publicKeys: |-
+#                       -----BEGIN PUBLIC KEY-----
+#                       MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDN45YOPicFfPbD537CZ23TtaT2x8
+#                       +cLqQVVKOPLZdCanYA/XiRT72juLdPVhBG5j0bayd7+wVFFKZfWUtHAZlA==
+#                       -----END PUBLIC KEY-----

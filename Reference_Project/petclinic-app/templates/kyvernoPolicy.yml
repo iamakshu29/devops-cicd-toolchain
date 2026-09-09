@@ -2,7 +2,7 @@ apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
   name: require-resource-limits
-  namespace: {{ .Release.Namespace }}
+  namespace: { { .Release.Namespace } }
 spec:
   validationFailureAction: Enforce
   rules:
@@ -26,7 +26,7 @@ apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
   name: add-ns-labels
-  namespace: {{ .Release.Namespace }}
+  namespace: { { .Release.Namespace } }
 spec:
   rules:
     - name: add-managed-by-label
@@ -45,7 +45,7 @@ apiVersion: kyverno.io/v1
 kind: Policy
 metadata:
   name: restrict-image-registries
-  namespace: {{ .Release.Namespace }}
+  namespace: { { .Release.Namespace } }
 spec:
   validationFailureAction: Enforce
   rules:
@@ -62,34 +62,35 @@ spec:
               - image: "docker.io/* | index.docker.io/* | gcr.io/* | quay.io/* | nginx:* | busybox:* | alpine:* | hashicorp/*"
 
 ---
-apiVersion: kyverno.io/v1
-kind: Policy
-metadata:
-  name: verify-cosign-signature
-  namespace: {{ .Release.Namespace }}
-spec:
-  validationFailureAction: Enforce
-  background: false
-  rules:
-    - name: verify-image-signature
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      verifyImages:
-        - imageReferences:
-            - "{{ .Values.app.containerImage }}*"
-          repository: index.docker.io/iamakshu/petclinic-app
-          required: true
-          verifyDigest: true
-          mutateDigest: true
-          useCache: false
-          attestors:
-            - entries:
-                - keys:
-                    publicKeys: |-
-                      -----BEGIN PUBLIC KEY-----
-                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDN45YOPicFfPbD537CZ23TtaT2x8
-                      +cLqQVVKOPLZdCanYA/XiRT72juLdPVhBG5j0bayd7+wVFFKZfWUtHAZlA==
-                      -----END PUBLIC KEY-----
+# apiVersion: kyverno.io/v1
+# kind: Policy
+# metadata:
+#   name: verify-cosign-signature
+#   namespace: {{ .Release.Namespace }}
+# spec:
+#   validationFailureAction: Enforce
+#   background: false
+#   rules:
+#     - name: verify-image-signature
+#       match:
+#         any:
+#           - resources:
+#               kinds:
+#                 - Pod
+#       verifyImages:
+#         - imageReferences:
+#             - "{{ .Values.app.containerImage }}*"
+#           repository: index.docker.io/iamakshu/petclinic-app
+#           required: true
+#           verifyDigest: true
+#           mutateDigest: true
+#           useCache: false
+#           cosignOCI11: true
+#           attestors:
+#             - entries:
+#                 - keys:
+#                     publicKeys: |-
+#                       -----BEGIN PUBLIC KEY-----
+#                       MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDN45YOPicFfPbD537CZ23TtaT2x8
+#                       +cLqQVVKOPLZdCanYA/XiRT72juLdPVhBG5j0bayd7+wVFFKZfWUtHAZlA==
+#                       -----END PUBLIC KEY-----
