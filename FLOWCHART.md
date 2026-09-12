@@ -18,26 +18,20 @@
 3. Put all values in `jenkins/env_setup/jenkins.env`
    (jenkins IP, base64 cosign key {private and public}, cosign password, github, dockerhub, sonar, nvd)
 
-4. Copy `jenkins.yml` to the server (needed whenever you edit it, since it is baked in the AMI)
+4. Copy `00_Setup/Infra/jenkins` folder to the server (needed whenever you edit it, since it is baked in the AMI)
 
    ```bash
    cd 00_Setup/Infra/terraform
    IP=<jenkins_public_ip>
    scp -i jenkins_master -r ../jenkins/ ubuntu@$IP:/tmp
-   ssh -i jenkins_master ubuntu@$IP '
-     sudo cp /tmp/jenkins.yml /var/lib/jenkins/casc_configs/jenkins.yml
-     sudo chown jenkins:jenkins /var/lib/jenkins/casc_configs/jenkins.yml
-     sudo chmod 600 /var/lib/jenkins/casc_configs/jenkins.yml'
+   sudo cp /tmp/jenkins/casc/jenkins.yml /var/lib/jenkins/casc_configs
+   sudo chown jenkins:jenkins /var/lib/jenkins/casc_configs/jenkins.yml
+   sudo chmod 600 /var/lib/jenkins/casc_configs/jenkins.yml
+   cd /tmp/jenkins/env_setup
+   bash env_setup.sh
    ```
 
-5. Copy env script and run it
-
-   ```bash
-   scp -i jenkins_master -r ../jenkins/env_setup/ ubuntu@$IP:/tmp/
-   ssh -i jenkins_master ubuntu@$IP 'cd /tmp/env_setup && sh env_setup.sh'
-   ```
-
-6. In Jenkins
+5. In Jenkins
    - Add OWASP Dependency-Check tool manually (not in CasC)
    - Copy the pipeline and run it
 

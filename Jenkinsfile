@@ -27,24 +27,24 @@ pipeline {
             }
         }
 
-        // stage('OWASP Dependency Check') {
-        //     steps {
-        //         dependencyCheck(
-        //             odcInstallation: 'Dependency-Check',
-        //             nvdCredentialsId: 'nvd-api-key',
-        //             additionalArguments: '''
-        //                 --scan ./
-        //                 --format XML
-        //                 --format HTML
-        //                 --noupdate
-        //             '''
-        //         )
+        stage('OWASP Dependency Check') {
+            steps {
+                dependencyCheck(
+                    odcInstallation: 'Dependency-Check',
+                    nvdCredentialsId: 'nvd-api-key',
+                    additionalArguments: '''
+                        --scan ./
+                        --format XML
+                        --format HTML
+                        --noupdate
+                    '''
+                )
 
-        //         dependencyCheckPublisher(
-        //             pattern: 'dependency-check-report.xml'
-        //         )
-        //     }
-        // }
+                dependencyCheckPublisher(
+                    pattern: 'dependency-check-report.xml'
+                )
+            }
+        }
 
         stage('Build') {
             steps {
