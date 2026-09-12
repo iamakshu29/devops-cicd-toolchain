@@ -105,21 +105,26 @@ Via manifest (GitOps way — apply this to the cluster):
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: sample-app
+  name: petclinic-prod
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/gitops-repo.git
+    repoURL: https://github.com/iamakshu29/devops-cicd-toolchain.git
     targetRevision: main
-    path: k8s/
+    path: Reference_Project/petclinic-app
+  helm:
+      valueFiles:
+        - values-prod.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: sample-app
+    namespace: petclinic-prod
   syncPolicy:
     automated:
       prune: true       # delete resources removed from Git
       selfHeal: true    # revert manual kubectl changes
+    syncOptions:
+      - CreateNamespace=true
 ```
 
 **`automated` sync** means ArgoCD syncs automatically on every commit — no manual "Sync" button needed.
