@@ -96,3 +96,26 @@ credentials:
 # nexus-credentials    -> needed only for Nexus push
 # slack-webhook        -> needed only when Slack notifications are enabled
 # teams-webhook        -> needed only when Teams notifications are enabled
+
+jobs:
+  - script: >
+      multibranchPipelineJob('${JENKINS_JOB_NAME}') {
+        branchSources {
+          branchSource {
+            source {
+              github {
+                id('my-app-github')
+                repoOwner('${GITHUB_USERNAME}')
+                repository('${GITHUB_REPO_NAME}')
+                credentialsId('github-creds')
+              }
+            }
+          }
+        }
+
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }
