@@ -36,7 +36,6 @@ pipeline {
                         --scan ./
                         --format XML
                         --format HTML
-                        --noupdate
                     '''
                 )
 
